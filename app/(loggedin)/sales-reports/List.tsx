@@ -85,7 +85,7 @@ export const List = ({}) => {
               </td>
               <td className="app__td">
                 ₱{' '}
-                {item.total_amount.toLocaleString(undefined, {
+                {item.total_amount?.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 })}
