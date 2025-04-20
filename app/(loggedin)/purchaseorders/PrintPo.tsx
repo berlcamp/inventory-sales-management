@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import { PurchaseOrder, PurchaseOrderItem } from '@/types'
+import { format } from 'date-fns'
 import { jsPDF } from 'jspdf'
 
 const generatePurchaseOrderPDF = async (item: PurchaseOrder) => {
@@ -21,13 +22,18 @@ const generatePurchaseOrderPDF = async (item: PurchaseOrder) => {
   doc.setFontSize(18)
   doc.text('Purchase Order', 105, 20, { align: 'center' })
 
+  let y = 40
+
   // Supplier Info
   doc.setFontSize(12)
-  doc.text(`Supplier: ${editData.supplier?.name}`, 14, 40)
-  doc.text(`Date: ${editData.date}`, 14, 50)
+  doc.text(`PO Number: ${editData.po_number}`, 14, y)
+  y += 7
+  doc.text(`Supplier: ${editData.supplier?.name}`, 14, y)
+  y += 7
+  doc.text(`Date: ${format(new Date(editData.date), 'MMMM dd, yyyy')}`, 14, y)
 
   // Add a table header
-  const tableStartY = 60
+  const tableStartY = y + 10
   const tableColumnHeaders = ['Product', 'Quantity', 'Cost', 'Total']
   doc.setFontSize(10)
   doc.text(tableColumnHeaders[0], 14, tableStartY)
@@ -58,7 +64,7 @@ const generatePurchaseOrderPDF = async (item: PurchaseOrder) => {
     0
   )
   doc.setFontSize(12)
-  doc.text(`Total Amount: ₱${totalAmount.toFixed(2)}`, 14, currentY + 10)
+  doc.text(`Total Amount: ${totalAmount.toFixed(2)}`, 14, currentY + 10)
 
   // Footer text
   doc.setFontSize(8)
