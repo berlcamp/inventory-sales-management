@@ -31,6 +31,7 @@ export default function AuthCallback() {
         .maybeSingle()
 
       if (error) {
+        await supabase.auth.signOut()
         console.error('Error fetching user:', error)
         // window.location.href = '/auth/unverified'
         return

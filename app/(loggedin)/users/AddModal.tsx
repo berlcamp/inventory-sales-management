@@ -128,31 +128,33 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
     if (error) {
       if (error.code === 'email_exists') {
-        const { data: usersList, error: fetchError } =
-          await supabase2.auth.admin.listUsers()
-        if (fetchError) {
-          console.error('Error fetching users:', fetchError.message)
-          return
+        const newData = {
+          name: formData.name,
+          email: formData.email,
+          password: password,
+          type: formData.type,
+          is_active: formData.is_active
         }
 
-        const existing = usersList.users.find((u) => u.email === formData.email)
-        if (!existing) {
-          console.error('User exists but cannot find the ID')
-          return
-        }
+        const { data: insertedUser, error: error2 } = await supabase
+          .from(table)
+          .insert(newData)
+          .select()
 
-        userId = existing.id
+        if (error2) {
+          console.error('Error inserting user into table:', error2.message)
+        } else {
+          dispatch(addItem({ ...newData, id: insertedUser[0].id }))
+          onClose()
+        }
       } else {
         console.error('Error creating user:', error.message)
         return
       }
     } else {
       userId = createdUser.user?.id || null
-    }
-
-    if (userId) {
       const newData = {
-        id: userId,
+        user_id: userId,
         name: formData.name,
         email: formData.email,
         password: password,

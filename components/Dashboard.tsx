@@ -207,7 +207,7 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <div>
-                    <div className="text-lg font-bold">
+                    <div className="text-sm font-bold">
                       {p.current_quantity}
                     </div>
                   </div>
@@ -240,12 +240,26 @@ export default function AdminDashboard() {
         <CardContent>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={metrics.bestSellingProducts}>
-              <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} />
+              <XAxis dataKey="name" tick={false} interval={0} />
               <YAxis allowDecimals={false} />
               <Tooltip />
               <Bar dataKey="quantity" fill="#8884d8" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          <div className="mt-6">
+            <div className="space-y-2">
+              {metrics.bestSellingProducts?.map((p, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <div className="space-y-1">
+                    <p className="text-sm">{p.name}</p>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold">{p.quantity}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
