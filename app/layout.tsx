@@ -13,7 +13,7 @@ import { OfflineDetector } from '@/components/OfflineDetector'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'POS',
+  title: 'Inventory-Sales-Management',
   description: 'POS by BTC'
 }
 

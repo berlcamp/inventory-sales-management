@@ -83,7 +83,13 @@ export const List = ({}) => {
                   {item.customer?.address}
                 </div>
               </td>
-              <td className="app__td">{item.total_amount}</td>
+              <td className="app__td">
+                ₱{' '}
+                {item.total_amount.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </td>
               <td className="app__td">
                 {item.status === 'completed' && (
                   <div className="flex space-x-1">

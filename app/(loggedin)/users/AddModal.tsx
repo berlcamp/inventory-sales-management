@@ -33,7 +33,7 @@ import { z } from 'zod'
 type ItemType = User
 type FormType = AddUserFormValues
 const table = 'users'
-const title = 'User'
+const title = 'System User'
 
 interface ModalProps {
   isOpen: boolean
@@ -50,7 +50,7 @@ const FormSchema = z.object({
 
 export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   const dispatch = useAppDispatch()
-  console.log('editData', editData)
+
   const supabase2 = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
     process.env.NEXT_PUBLIC_SERVICE_ROLE_KEY ?? '',
@@ -179,7 +179,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       name: editData?.name || '',
       email: editData?.email || '',
       type: editData?.type || '',
-      is_active: editData ? editData.is_active : false
+      is_active: editData ? editData.is_active : true
     })
   }, [form, editData, isOpen])
 
@@ -262,7 +262,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="app__formlabel_standard">
-                            Type
+                            Account Type
                           </FormLabel>
                           <Select
                             onValueChange={field.onChange}
@@ -274,6 +274,9 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
+                              <SelectItem value="superadmin">
+                                Super Admin
+                              </SelectItem>
                               <SelectItem value="admin">Admin</SelectItem>
                               <SelectItem value="user">User</SelectItem>
                             </SelectContent>

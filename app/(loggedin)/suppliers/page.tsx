@@ -1,5 +1,6 @@
 'use client'
 
+import LoadingSkeleton from '@/components/LoadingSkeleton'
 import { Button } from '@/components/ui/button'
 import { PER_PAGE } from '@/constants'
 import { supabase } from '@/lib/supabase/client'
@@ -14,6 +15,7 @@ export default function Page() {
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage] = useState(1)
   const [modalAddOpen, setModalAddOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState('')
 
   const dispatch = useAppDispatch()
@@ -23,6 +25,7 @@ export default function Page() {
     dispatch(addList([])) // Reset the list first on page load
 
     const fetchData = async () => {
+      setLoading(true)
       const { data, count, error } = await supabase
         .from('suppliers')
         .select('*', { count: 'exact' })
@@ -37,6 +40,7 @@ export default function Page() {
         dispatch(addList(data))
         setTotalCount(count || 0)
       }
+      setLoading(false)
     }
 
     fetchData()
@@ -60,6 +64,15 @@ export default function Page() {
 
       {/* Pass Redux data to List Table */}
       <List />
+
+      {/* Loading Skeleton */}
+      {loading && <LoadingSkeleton />}
+
+      {totalCount === 0 && !loading && (
+        <div className="mt-4 flex justify-center items-center space-x-2">
+          No records found.
+        </div>
+      )}
 
       <div className="mt-4 flex justify-center items-center space-x-2">
         <Button

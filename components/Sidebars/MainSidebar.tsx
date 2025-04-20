@@ -1,10 +1,14 @@
 'use client'
 
+import { RootState } from '@/types'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSelector } from 'react-redux'
 
 const MainSidebar = () => {
   const currentRoute = usePathname()
+
+  const user = useSelector((state: RootState) => state.user.user)
 
   return (
     <>
@@ -129,21 +133,27 @@ const MainSidebar = () => {
         </li>
 
         {/* Settings Section */}
-        <li>
-          <div className="flex items-center text-gray-500 space-x-1 px-2">
-            <span className="font-semibold">Settings</span>
-          </div>
-        </li>
-        <li>
-          <Link
-            href="/users"
-            className={`app__menu_link ${
-              currentRoute === '/users' ? 'app_menu_link_active' : ''
-            }`}
-          >
-            <span className="flex-1 ml-3 whitespace-nowrap">System Users</span>
-          </Link>
-        </li>
+        {user?.user_metadata?.sffo_role === 'superadmin' && (
+          <>
+            <li>
+              <div className="flex items-center text-gray-500 space-x-1 px-2">
+                <span className="font-semibold">Settings</span>
+              </div>
+            </li>
+            <li>
+              <Link
+                href="/users"
+                className={`app__menu_link ${
+                  currentRoute === '/users' ? 'app_menu_link_active' : ''
+                }`}
+              >
+                <span className="flex-1 ml-3 whitespace-nowrap">
+                  System Users
+                </span>
+              </Link>
+            </li>{' '}
+          </>
+        )}
       </ul>
     </>
   )

@@ -38,6 +38,7 @@ const table = 'purchase_orders'
 export const List = ({}) => {
   const dispatch = useAppDispatch()
   const list = useSelector((state: RootState) => state.list.value)
+  const user = useSelector((state: RootState) => state.user.user)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalAddOpen, setModalAddOpen] = useState(false)
@@ -214,7 +215,13 @@ export const List = ({}) => {
                   {item.supplier?.address}
                 </div>
               </td>
-              <td className="app__td">{item.total_amount}</td>
+              <td className="app__td">
+                ₱{' '}
+                {item.total_amount.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </td>
               <td className="app__td">
                 <div className="flex space-x-1">
                   <div>
@@ -223,33 +230,37 @@ export const List = ({}) => {
                       <Badge variant="green">{item.status}</Badge>
                     )}
                   </div>
-                  {item.status === 'draft' && (
-                    <Menu as="div" className="app__menu_container">
-                      <div>
-                        <MenuButton className="app__dropdown_btn">
-                          <ChevronDown className="h-5 w-5" aria-hidden="true" />
-                        </MenuButton>
-                      </div>
+                  {item.status === 'draft' &&
+                    user?.user_metadata?.sffo_role === 'admin' && (
+                      <Menu as="div" className="app__menu_container">
+                        <div>
+                          <MenuButton className="app__dropdown_btn">
+                            <ChevronDown
+                              className="h-5 w-5"
+                              aria-hidden="true"
+                            />
+                          </MenuButton>
+                        </div>
 
-                      <Transition as={Fragment}>
-                        <MenuItems className="app__dropdown_items_left">
-                          <div className="py-1">
-                            <MenuItem>
-                              <div
-                                onClick={() =>
-                                  handleMarkCompleteConfirmation(item)
-                                }
-                                className="app__dropdown_item"
-                              >
-                                <CheckSquare className="w-4 h-4" />
-                                <span>Mark as Complete</span>
-                              </div>
-                            </MenuItem>
-                          </div>
-                        </MenuItems>
-                      </Transition>
-                    </Menu>
-                  )}
+                        <Transition as={Fragment}>
+                          <MenuItems className="app__dropdown_items_left">
+                            <div className="py-1">
+                              <MenuItem>
+                                <div
+                                  onClick={() =>
+                                    handleMarkCompleteConfirmation(item)
+                                  }
+                                  className="app__dropdown_item"
+                                >
+                                  <CheckSquare className="w-4 h-4" />
+                                  <span>Mark as Complete</span>
+                                </div>
+                              </MenuItem>
+                            </div>
+                          </MenuItems>
+                        </Transition>
+                      </Menu>
+                    )}
                 </div>
               </td>
               <td className="app__td">
@@ -266,29 +277,34 @@ export const List = ({}) => {
                         <Badge variant="green">{item.payment_status}</Badge>
                       )}
                     </div>
-                    <Menu as="div" className="app__menu_container">
-                      <div>
-                        <MenuButton className="app__dropdown_btn">
-                          <ChevronDown className="h-5 w-5" aria-hidden="true" />
-                        </MenuButton>
-                      </div>
+                    {user?.user_metadata?.sffo_role === 'admin' && (
+                      <Menu as="div" className="app__menu_container">
+                        <div>
+                          <MenuButton className="app__dropdown_btn">
+                            <ChevronDown
+                              className="h-5 w-5"
+                              aria-hidden="true"
+                            />
+                          </MenuButton>
+                        </div>
 
-                      <Transition as={Fragment}>
-                        <MenuItems className="app__dropdown_items_left">
-                          <div className="py-1">
-                            <MenuItem>
-                              <div
-                                onClick={() => handleReceivePayment(item)}
-                                className="app__dropdown_item"
-                              >
-                                <PhilippinePeso className="w-4 h-4" />
-                                <span>Payments</span>
-                              </div>
-                            </MenuItem>
-                          </div>
-                        </MenuItems>
-                      </Transition>
-                    </Menu>
+                        <Transition as={Fragment}>
+                          <MenuItems className="app__dropdown_items_left">
+                            <div className="py-1">
+                              <MenuItem>
+                                <div
+                                  onClick={() => handleReceivePayment(item)}
+                                  className="app__dropdown_item"
+                                >
+                                  <PhilippinePeso className="w-4 h-4" />
+                                  <span>Payments</span>
+                                </div>
+                              </MenuItem>
+                            </div>
+                          </MenuItems>
+                        </Transition>
+                      </Menu>
+                    )}
                   </div>
                 )}
               </td>

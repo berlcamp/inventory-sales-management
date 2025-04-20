@@ -1,11 +1,14 @@
 'use client'
 
+import LoadingSkeleton from '@/components/LoadingSkeleton'
 import { Button } from '@/components/ui/button'
 import { PER_PAGE } from '@/constants'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { addList } from '@/store/listSlice' // Make sure this path is correct
+import { RootState } from '@/types'
 import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { AddModal } from './AddModal'
 import { Filter } from './Filter'
 import { List } from './List'
@@ -14,17 +17,23 @@ export default function Page() {
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage] = useState(1)
   const [modalAddOpen, setModalAddOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState('')
 
   const dispatch = useAppDispatch()
+  const user = useSelector((state: RootState) => state.user.user)
 
   // Fetch data on page load
   useEffect(() => {
+    dispatch(addList([])) // Reset the list first on page load
+
     const fetchData = async () => {
+      setLoading(true)
       const { data, count, error } = await supabase
         .from('users')
         .select('*', { count: 'exact' })
         .ilike('name', `%${filter}%`)
+        .neq('email', 'berlcamp@gmail.com')
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
         .order('id', { ascending: false })
 
@@ -35,10 +44,15 @@ export default function Page() {
         dispatch(addList(data))
         setTotalCount(count || 0)
       }
+      setLoading(false)
     }
 
     fetchData()
   }, [page, filter, dispatch]) // Add `dispatch` to dependency array
+
+  if (user?.user_metadata?.sffo_role !== 'superadmin') {
+    window.location.href = '/'
+  }
 
   return (
     <div>
@@ -58,6 +72,15 @@ export default function Page() {
 
       {/* Pass Redux data to List Table */}
       <List />
+
+      {/* Loading Skeleton */}
+      {loading && <LoadingSkeleton />}
+
+      {totalCount === 0 && !loading && (
+        <div className="mt-4 flex justify-center items-center space-x-2">
+          No records found.
+        </div>
+      )}
 
       <div className="mt-4 flex justify-center items-center space-x-2">
         <Button

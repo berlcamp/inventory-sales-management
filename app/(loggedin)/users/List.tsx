@@ -1,6 +1,7 @@
 'use client'
 
 import { ConfirmationModal } from '@/components/ConfirmationModal'
+import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { deleteItem } from '@/store/listSlice'
@@ -124,9 +125,9 @@ export const List = ({}) => {
               <td className="app__td">{item.type}</td>
               <td className="app__td">
                 {item.is_active ? (
-                  <span className="text-green-600 font-bold">Active</span>
+                  <Badge variant="green">Active</Badge>
                 ) : (
-                  <span className="text-red-500 font-bold">Inactive</span>
+                  <Badge variant="destructive">Active</Badge>
                 )}
               </td>
             </tr>
