@@ -6,29 +6,7 @@ import { Mail } from 'lucide-react'
 import { useState } from 'react'
 
 export default function LoginBox({ message }: { message?: string }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const handleLogin = async () => {
-    setLoading(true)
-    setError('')
-
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-
-    if (authError) {
-      setLoading(false)
-      setError(authError.message)
-      return
-    }
-    setLoading(false)
-    window.location.href = '/'
-  }
-
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -50,7 +28,7 @@ export default function LoginBox({ message }: { message?: string }) {
             Login to your POS account
           </div>
         </div>
-
+        {error && <p className="text-sm text-red-500">{error}</p>}
         <Button
           variant="outline"
           className="w-full flex items-center justify-center gap-2"
