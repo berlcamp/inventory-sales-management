@@ -224,7 +224,7 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
             {totalReceived < editData.total_amount && (
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <FormField
                         control={form.control}
