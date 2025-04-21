@@ -28,7 +28,7 @@ import toast from 'react-hot-toast'
 import { useSelector } from 'react-redux'
 import { AddModal } from './AddModal'
 import { AddPaymentModal } from './AddPaymentModal'
-import generateSalesOrderPDF from './PrintSo'
+import PrintClaimSlip from './PrintClaimSlip'
 import { ViewProductsModal } from './ViewProductsModal'
 
 // Always update this on other pages
@@ -120,8 +120,10 @@ export const List = ({}) => {
     setModalMarkCompleteOpen(false)
   }
 
-  const handleGenerateSalesOrderPDF = (item: ItemType) => {
-    generateSalesOrderPDF(item) // Pass the data you want to print
+  const HandlePrintClaimSlip = (item: ItemType) => {
+    if (!user) return
+
+    PrintClaimSlip(item, user) // Pass the data you want to print
   }
 
   // Delete Supplier
@@ -175,9 +177,7 @@ export const List = ({}) => {
                           <>
                             <MenuItem>
                               <div
-                                onClick={() =>
-                                  handleGenerateSalesOrderPDF(item)
-                                }
+                                onClick={() => HandlePrintClaimSlip(item)}
                                 className="app__dropdown_item"
                               >
                                 <PrinterIcon className="w-4 h-4" />

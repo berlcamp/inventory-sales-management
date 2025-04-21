@@ -2,8 +2,19 @@ import { RootState as RootStateType } from '@/store'
 
 export type RootState = RootStateType
 
+export interface Settings {
+  id: string
+  shipping_company: string
+  shipping_address: string
+  shipping_contact_number: string
+  billing_company: string
+  billing_address: string
+  billing_contact_number: string
+}
+
 export interface User {
   id: string
+  user_id: string
   name: string
   password: string
   email?: string
@@ -75,7 +86,7 @@ export interface AddSupplierFormValues {
   address: string
 }
 
-export type PurchaseOrderStatus = 'draft' | 'completed'
+export type PurchaseOrderStatus = 'draft' | 'approved' | 'completed'
 export type PaymentStatus = 'paid' | 'partial' | 'unpaid'
 
 export interface PurchaseOrder {

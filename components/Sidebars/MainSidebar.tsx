@@ -133,12 +133,24 @@ const MainSidebar = () => {
         </li>
 
         {/* Settings Section */}
-        {user?.user_metadata?.sffo_role === 'superadmin' && (
+        {user?.user_metadata?.sffo_role === 'admin' && (
           <>
             <li>
               <div className="flex items-center text-gray-500 space-x-1 px-2">
                 <span className="font-semibold">Settings</span>
               </div>
+            </li>
+            <li>
+              <Link
+                href="/settings"
+                className={`app__menu_link ${
+                  currentRoute === '/settings' ? 'app_menu_link_active' : ''
+                }`}
+              >
+                <span className="flex-1 ml-3 whitespace-nowrap">
+                  Address Settings
+                </span>
+              </Link>
             </li>
             <li>
               <Link
@@ -151,7 +163,7 @@ const MainSidebar = () => {
                   System Users
                 </span>
               </Link>
-            </li>{' '}
+            </li>
           </>
         )}
       </ul>

@@ -33,7 +33,7 @@ export default function Page() {
         .from('users')
         .select('*', { count: 'exact' })
         .ilike('name', `%${filter}%`)
-        .neq('email', 'berlcamp@gmail.com')
+        // .neq('email', 'berlcamp@gmail.com')
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
         .order('id', { ascending: false })
 
@@ -50,7 +50,7 @@ export default function Page() {
     fetchData()
   }, [page, filter, dispatch]) // Add `dispatch` to dependency array
 
-  if (user?.user_metadata?.sffo_role !== 'superadmin') {
+  if (user?.user_metadata?.sffo_role !== 'admin') {
     window.location.href = '/'
   }
 

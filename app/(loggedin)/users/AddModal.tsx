@@ -27,6 +27,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { createClient } from '@supabase/supabase-js'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import toast from 'react-hot-toast'
 import { z } from 'zod'
 
 // Always update this on other pages
@@ -83,10 +84,13 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   // Submit handler
   const onSubmit = async (formData: FormType) => {
     if (editData?.id) {
-      const { error } = await supabase2.auth.admin.updateUserById(editData.id, {
-        email: formData.email,
-        user_metadata: { sffo_role: formData.type }
-      })
+      const { error } = await supabase2.auth.admin.updateUserById(
+        editData.user_id,
+        {
+          email: formData.email,
+          user_metadata: { sffo_role: formData.type }
+        }
+      )
 
       if (error) {
         console.error('Error updating user:', error.message)
@@ -112,30 +116,68 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         onClose()
       }
       return
-    }
+    } else {
+      let userId: string | null = null
+      const password = generatePassword()
 
-    let userId: string | null = null
-    const password = generatePassword()
+      const { data: createdUser, error } =
+        await supabase2.auth.admin.createUser({
+          email: formData.email,
+          password: password,
+          email_confirm: true,
+          user_metadata: {
+            sffo_role: formData.type
+          }
+        })
 
-    const { data: createdUser, error } = await supabase2.auth.admin.createUser({
-      email: formData.email,
-      password: password,
-      email_confirm: true,
-      user_metadata: {
-        sffo_role: formData.type
-      }
-    })
+      if (error) {
+        if (error.code === 'email_exists') {
+          const { data, error } = await supabase.rpc('get_user_id_by_email', {
+            p_email: formData.email
+          })
 
-    if (error) {
-      if (error.code === 'email_exists') {
+          if (error) {
+            toast.error(`Error fetching user ID:, ${error.message}`)
+            return
+          }
+
+          const userId = data
+
+          const newData = {
+            user_id: userId,
+            name: formData.name,
+            email: formData.email,
+            password: password,
+            type: formData.type,
+            is_active: formData.is_active
+          }
+
+          const { data: insertedUser, error: error2 } = await supabase
+            .from(table)
+            .insert(newData)
+            .select()
+
+          if (error2) {
+            console.error('Error inserting user into table:', error2.message)
+          } else {
+            dispatch(addItem({ ...newData, id: insertedUser[0].id }))
+            onClose()
+          }
+        } else {
+          console.error('Error creating user:', error.message)
+          return
+        }
+      } else {
+        userId = createdUser.user?.id || null
         const newData = {
+          user_id: userId,
           name: formData.name,
           email: formData.email,
           password: password,
           type: formData.type,
           is_active: formData.is_active
         }
-
+        console.log('newData', newData)
         const { data: insertedUser, error: error2 } = await supabase
           .from(table)
           .insert(newData)
@@ -147,31 +189,6 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           dispatch(addItem({ ...newData, id: insertedUser[0].id }))
           onClose()
         }
-      } else {
-        console.error('Error creating user:', error.message)
-        return
-      }
-    } else {
-      userId = createdUser.user?.id || null
-      const newData = {
-        user_id: userId,
-        name: formData.name,
-        email: formData.email,
-        password: password,
-        type: formData.type,
-        is_active: formData.is_active
-      }
-      console.log('newData', newData)
-      const { data: insertedUser, error: error2 } = await supabase
-        .from(table)
-        .insert(newData)
-        .select()
-
-      if (error2) {
-        console.error('Error inserting user into table:', error2.message)
-      } else {
-        dispatch(addItem({ ...newData, id: insertedUser[0].id }))
-        onClose()
       }
     }
   }
@@ -276,9 +293,6 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="superadmin">
-                                Super Admin
-                              </SelectItem>
                               <SelectItem value="admin">Admin</SelectItem>
                               <SelectItem value="user">User</SelectItem>
                             </SelectContent>

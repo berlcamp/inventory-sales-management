@@ -45,6 +45,7 @@ export const List = ({}) => {
   const [modalPaymentOpen, setModalPaymentOpen] = useState(false)
   const [modalViewProductsOpen, setModalViewProductsOpen] = useState(false)
   const [modalMarkCompleteOpen, setModalMarkCompleteOpen] = useState(false)
+  const [modalMarkApproveOpen, setModalMarkApproveOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
@@ -71,6 +72,10 @@ export const List = ({}) => {
     setSelectedItem(item)
     setModalMarkCompleteOpen(true)
   }
+  const handleMarkApproveConfirmation = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalMarkApproveOpen(true)
+  }
 
   const handleMarkComplete = async () => {
     if (!selectedItem) return
@@ -93,8 +98,31 @@ export const List = ({}) => {
     setModalMarkCompleteOpen(false)
   }
 
+  const handleMarkApprove = async () => {
+    if (!selectedItem) return
+
+    await supabase
+      .from('purchase_orders')
+      .update({ status: 'approved' })
+      .eq('id', selectedItem.id)
+
+    toast.success('Purchased Order updated successfully!')
+
+    // Update Redux state
+    dispatch(
+      updateList({
+        ...selectedItem,
+        status: 'approved',
+        id: selectedItem.id
+      })
+    )
+    setModalMarkApproveOpen(false)
+  }
+
   const handlePrintPurchaseOrder = (item: ItemType) => {
-    generatePurchaseOrderPDF(item) // Pass the data you want to print
+    if (!user) return
+
+    generatePurchaseOrderPDF(item, user) // Pass the data you want to print
   }
 
   // Delete Supplier
@@ -229,8 +257,42 @@ export const List = ({}) => {
                     {item.status === 'completed' && (
                       <Badge variant="green">{item.status}</Badge>
                     )}
+                    {item.status === 'approved' && (
+                      <Badge variant="orange">{item.status}</Badge>
+                    )}
                   </div>
                   {item.status === 'draft' &&
+                    user?.user_metadata?.sffo_role === 'admin' && (
+                      <Menu as="div" className="app__menu_container">
+                        <div>
+                          <MenuButton className="app__dropdown_btn">
+                            <ChevronDown
+                              className="h-5 w-5"
+                              aria-hidden="true"
+                            />
+                          </MenuButton>
+                        </div>
+
+                        <Transition as={Fragment}>
+                          <MenuItems className="app__dropdown_items_left">
+                            <div className="py-1">
+                              <MenuItem>
+                                <div
+                                  onClick={() =>
+                                    handleMarkApproveConfirmation(item)
+                                  }
+                                  className="app__dropdown_item"
+                                >
+                                  <CheckSquare className="w-4 h-4" />
+                                  <span>Mark as Approved</span>
+                                </div>
+                              </MenuItem>
+                            </div>
+                          </MenuItems>
+                        </Transition>
+                      </Menu>
+                    )}
+                  {item.status === 'approved' &&
                     user?.user_metadata?.sffo_role === 'admin' && (
                       <Menu as="div" className="app__menu_container">
                         <div>
@@ -320,10 +382,16 @@ export const List = ({}) => {
         message="Are you sure you want to delete this?"
       />
       <ConfirmationModal
+        isOpen={modalMarkApproveOpen}
+        onClose={() => setModalMarkApproveOpen(false)}
+        onConfirm={handleMarkApprove}
+        message="By marking as approve, you can no longer edit the product items. Are you sure you want to mark this as approved?"
+      />
+      <ConfirmationModal
         isOpen={modalMarkCompleteOpen}
         onClose={() => setModalMarkCompleteOpen(false)}
         onConfirm={handleMarkComplete}
-        message="By marking as complete, you can no longer edit the product items, are you sure you want to mark this as complete?"
+        message="By marking as complete, the purchased products will automatically be added to product stocks. Are you sure you want to mark this as complete?"
       />
       <AddModal
         isOpen={modalAddOpen}
