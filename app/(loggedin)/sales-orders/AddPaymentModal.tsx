@@ -302,7 +302,7 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                   </div>
                   <div className="app__modal_dialog_footer border-t-0! mt-0">
                     <Button type="submit">
-                      <span>{isSubmitting ? 'Saving..' : 'Save'}</span>
+                      <span>{isSubmitting ? 'Saving..' : 'Save Payment'}</span>
                     </Button>
                   </div>
                 </form>
@@ -312,17 +312,15 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
             <div className="flex space-x-4 border-t pt-2">
               <div>
                 <span className="text-xs">Sales Order Total</span>{' '}
-                <Badge variant="green">
-                  {editData.total_amount.toFixed(2)}
-                </Badge>
+                <Badge>{editData.total_amount.toFixed(2)}</Badge>
               </div>
               <div>
                 <span className="text-xs">Total Payments Received</span>{' '}
-                <Badge variant="green">{totalReceived.toFixed(2)}</Badge>
+                <Badge>{totalReceived.toFixed(2)}</Badge>
               </div>
               <div>
                 <span className="text-xs">Remaining Amount</span>{' '}
-                <Badge variant="green">{remainingAmount.toFixed(2)}</Badge>
+                <Badge>{remainingAmount.toFixed(2)}</Badge>
               </div>
             </div>
             <table className="app__table mb-10">

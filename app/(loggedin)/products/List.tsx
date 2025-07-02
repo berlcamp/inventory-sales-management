@@ -1,5 +1,4 @@
 'use client'
-
 import { ConfirmationModal } from '@/components/ConfirmationModal'
 import { countAvailableStocks } from '@/lib/helpers'
 import { supabase } from '@/lib/supabase/client'
@@ -59,7 +58,7 @@ export const List = ({}) => {
         .eq('id', selectedItem.id)
 
       if (error) {
-        console.error('Error deleting supplier:', error.message)
+        console.error('Error deleting:', error.message)
       } else {
         toast.success('Successfully deleted!')
 

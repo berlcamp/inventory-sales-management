@@ -37,33 +37,33 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      const today = new Date()
-      const firstDay = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        1
-      ).toISOString()
-      const lastDay = new Date(
-        today.getFullYear(),
-        today.getMonth() + 1,
-        0
-      ).toISOString()
+      // const today = new Date()
+      // const firstDay = new Date(
+      //   today.getFullYear(),
+      //   today.getMonth(),
+      //   1
+      // ).toISOString()
+      // const lastDay = new Date(
+      //   today.getFullYear(),
+      //   today.getMonth() + 1,
+      //   0
+      // ).toISOString()
 
       const [salesRes, purchasesRes, lowStockRes, bestSellersRes] =
         await Promise.all([
           supabase
             .from('sales_orders')
             .select('total_amount')
-            .eq('status', 'completed')
-            .gte('date', firstDay)
-            .lte('date', lastDay),
+            .eq('status', 'completed'),
+          // .gte('date', firstDay)
+          // .lte('date', lastDay),
 
           supabase
             .from('purchase_orders')
             .select('total_amount')
-            .eq('status', 'completed')
-            .gte('date', firstDay)
-            .lte('date', lastDay),
+            .eq('status', 'completed'),
+          // .gte('date', firstDay)
+          // .lte('date', lastDay),
 
           supabase
             .from('products')
@@ -76,7 +76,7 @@ export default function AdminDashboard() {
               '*, product_stock:product_stock_id(id, product_id, product:product_id(name))'
             )
         ])
-
+      console.log('salesRes.data', salesRes.data)
       const totalSales =
         salesRes.data?.reduce((sum, s) => sum + s.total_amount, 0) || 0
       const totalSalesOrders = salesRes.data?.length || 0
