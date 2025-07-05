@@ -68,8 +68,29 @@ export interface ProductStock {
   quantity: number
   remaining_quantity: number
   purchase_order_id?: number
+  purchase_order?: PurchaseOrder
   purchase_date: string
+  logs: ProductStockLog[]
   created_at?: string
+}
+
+export interface ProductStockLog {
+  id: number
+  created_at: string
+  product_stock_id: number
+  product_id: number
+  sales_order_id: number
+  po_id: number
+  message: string
+  user_name: string
+}
+
+export interface SalesOrderLog {
+  id: number
+  created_at: string
+  sales_order_id: number
+  message: string
+  user_name: string
 }
 
 export interface Supplier {
@@ -86,7 +107,11 @@ export interface AddSupplierFormValues {
   address: string
 }
 
-export type PurchaseOrderStatus = 'draft' | 'approved' | 'completed'
+export type PurchaseOrderStatus =
+  | 'draft'
+  | 'approved'
+  | 'completed'
+  | 'received'
 export type PaymentStatus = 'paid' | 'partial' | 'unpaid'
 
 export interface PurchaseOrder {
@@ -102,6 +127,7 @@ export interface PurchaseOrder {
   order_items: PurchaseOrderItem[]
   supplier: Supplier
   payments: PurchaseOrderPayment[]
+  remarks: string
 }
 
 export interface PurchaseOrderItem {
@@ -111,6 +137,7 @@ export interface PurchaseOrderItem {
   product: Product
   quantity: number
   cost: number
+  price: number
 }
 
 export interface PurchaseOrderPayment {
@@ -118,7 +145,9 @@ export interface PurchaseOrderPayment {
   purchase_order_id: number
   date: string
   amount: number
-  type: 'cash' | 'cheque' | 'bank'
+  bank: string
+  due_date: string
+  type: string
 }
 
 export interface Customer {
@@ -134,7 +163,7 @@ export type DiscountType = 'none' | 'per_product' | 'order_wide'
 export interface SalesOrder {
   id: number
   customer_id?: number
-  status: 'draft' | 'completed'
+  status: 'draft' | 'completed' | 'reserved'
   payment_status: 'unpaid' | 'partial' | 'paid'
   so_number: string
   total_amount: number
@@ -152,17 +181,22 @@ export interface SalesOrder {
 export interface SalesOrderItem {
   id: number
   sales_order_id: number
+  product_id: number
   product_stock_id: number
   product_stock: ProductStock
   quantity: number
   unit_price: number
   discount: number
   total: number
+  created_at: string
+  sales_order: SalesOrder
 }
 
 export interface SalesOrderPayment {
   id: number
   date: string
   amount: number
-  type: 'cash' | 'cheque' | 'bank'
+  bank: string
+  due_date: string
+  type: string
 }

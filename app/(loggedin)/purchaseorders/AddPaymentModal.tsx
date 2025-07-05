@@ -57,7 +57,9 @@ interface ModalProps {
 const FormSchema = z.object({
   date: z.string().min(1, 'Amount is required'),
   amount: z.coerce.number().min(1, 'Amount is required'),
-  type: z.string().min(1, 'Payment Type is required')
+  type: z.string().min(1, 'Payment Type is required'),
+  bank: z.string().optional(),
+  due_date: z.string().optional()
 })
 type FormType = z.infer<typeof FormSchema>
 
@@ -77,7 +79,9 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
     defaultValues: {
       date: '',
       amount: 0,
-      type: ''
+      type: '',
+      bank: '',
+      due_date: ''
     }
   })
 
@@ -91,6 +95,8 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
         date: formdata.date,
         amount: formdata.amount,
         type: formdata.type,
+        bank: formdata.bank,
+        due_date: formdata.due_date,
         purchase_order_id: editData.id
       }
 
@@ -290,8 +296,13 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="Cash">Cash</SelectItem>
+                                <SelectItem value="PDC">
+                                  Cheque (PDC)
+                                </SelectItem>
                                 <SelectItem value="Cheque">Cheque</SelectItem>
-                                <SelectItem value="Bank">Bank</SelectItem>
+                                <SelectItem value="Bank Deposit">
+                                  Bank Deposit
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -299,10 +310,57 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                         )}
                       />
                     </div>
+                    {form.watch('type') === 'PDC' && (
+                      <div>
+                        <FormField
+                          control={form.control}
+                          name="due_date"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="app__formlabel_standard">
+                                PDC Due Date
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  className="app__input_date"
+                                  type="date"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                    {form.watch('type') !== 'Cash' &&
+                      form.watch('type') !== '' && (
+                        <div>
+                          <FormField
+                            control={form.control}
+                            name="bank"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="app__formlabel_standard">
+                                  Bank Details
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    className="app__input_standard"
+                                    placeholder="Bank details"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
                   </div>
                   <div className="app__modal_dialog_footer border-t-0! mt-0">
                     <Button type="submit">
-                      <span>{isSubmitting ? 'Saving..' : 'Save'}</span>
+                      <span>{isSubmitting ? 'Saving..' : 'Add Payment'}</span>
                     </Button>
                   </div>
                 </form>
@@ -311,17 +369,13 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
             <div>Payments Made</div>
             <div className="flex space-x-4 border-t pt-2">
               <div>
-                <Badge variant="green">
-                  Payable: {editData.total_amount.toFixed(2)}
-                </Badge>
+                <Badge>Payable: {editData.total_amount.toFixed(2)}</Badge>
               </div>
               <div>
-                <Badge variant="green">Paid: {totalPayment.toFixed(2)}</Badge>
+                <Badge>Paid: {totalPayment.toFixed(2)}</Badge>
               </div>
               <div>
-                <Badge variant="green">
-                  Remaining Balance: {remainingAmount.toFixed(2)}
-                </Badge>
+                <Badge>Remaining Balance: {remainingAmount.toFixed(2)}</Badge>
               </div>
             </div>
             <table className="app__table mb-10">
@@ -370,7 +424,11 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                         : 'Invalid date'}
                     </td>
                     <td className="app__td">{item.amount}</td>
-                    <td className="app__td">{item.type}</td>
+                    <td className="app__td">
+                      {item.type}{' '}
+                      {item.due_date && `(Due Date: ${item.due_date})`}{' '}
+                      {item.bank && `(Bank: ${item.bank})`}
+                    </td>
                   </tr>
                 ))}
                 {list.length === 0 && (

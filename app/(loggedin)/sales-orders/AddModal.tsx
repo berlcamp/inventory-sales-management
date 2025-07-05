@@ -26,9 +26,9 @@ import {
 } from '@/components/ui/popover'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import { useAppDispatch } from '@/store/hook'
+import { useAppDispatch, useAppSelector } from '@/store/hook'
 import { addItem, updateList } from '@/store/listSlice'
-import { Customer, ProductStock, SalesOrder } from '@/types'
+import { Customer, ProductStock, RootState, SalesOrder } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, ChevronsUpDown, PlusIcon, Trash2Icon } from 'lucide-react'
@@ -43,6 +43,7 @@ const FormSchema = z.object({
   po_number: z.string().optional(),
   products: z.array(
     z.object({
+      product_id: z.coerce.number().min(1, 'Product is required'),
       product_stock_id: z.coerce.number().min(1, 'Product is required'),
       quantity: z.coerce.number().min(1, 'Quantity is required'),
       unit_price: z.coerce.number().min(1, 'Price is required'),
@@ -53,6 +54,7 @@ const FormSchema = z.object({
 })
 
 type ProductStockType = {
+  product_id?: number
   product_stock_id?: number
   quantity?: number
   unit_price?: number
@@ -79,6 +81,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const dispatch = useAppDispatch()
 
+  const user = useAppSelector((state: RootState) => state.user.user)
+
   // Customers Dropdown
   const [open, setOpen] = useState(false)
 
@@ -95,6 +99,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       customer_id: 0,
       products: [
         {
+          product_id: 0,
           product_stock_id: 0,
           quantity: 0,
           unit_price: 0,
@@ -163,7 +168,9 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             product_stock_id: product.product_stock_id,
             unit_price: product.unit_price,
             discount: product.discount,
-            quantity: product.quantity
+            quantity: product.quantity,
+            total: product.total,
+            product_id: product.product_id
           }))
           // for redux
           const salesOrderItemsRedux = formdata.products.map((product) => ({
@@ -174,7 +181,9 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             ),
             unit_price: product.unit_price,
             discount: product.discount,
-            quantity: product.quantity
+            quantity: product.quantity,
+            total: product.total,
+            product_id: product.product_id
           }))
 
           const { error: insertError } = await supabase
@@ -185,6 +194,14 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           if (insertError) {
             console.error('Error inserting sales order items:', insertError)
           } else {
+            // Update logs
+            await supabase.from('product_change_logs').insert({
+              sales_order_id: editData.id,
+              user_id: user?.system_user_id,
+              user_name: user?.name,
+              message: `updated this sales order`
+            })
+
             // Update Redux state
             dispatch(
               updateList({
@@ -231,7 +248,9 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             product_stock_id: product.product_stock_id,
             unit_price: product.unit_price,
             discount: product.discount,
-            quantity: product.quantity
+            quantity: product.quantity,
+            total: product.total,
+            product_id: product.product_id
           }))
           // for redux
           const salesOrderItemsRedux = formdata.products.map((product) => ({
@@ -242,7 +261,9 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             ),
             unit_price: product.unit_price,
             discount: product.discount,
-            quantity: product.quantity
+            quantity: product.quantity,
+            total: product.total,
+            product_id: product.product_id
           }))
 
           const { error: insertItemsError } = await supabase
@@ -253,6 +274,14 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           if (insertItemsError) {
             console.error('Error adding sales order items:', insertItemsError)
           } else {
+            // Update logs
+            await supabase.from('product_change_logs').insert({
+              sales_order_id: newPOId,
+              user_id: user?.system_user_id,
+              user_name: user?.name,
+              message: `added this sales order`
+            })
+
             // Update Redux with the new data
             dispatch(
               addItem({
@@ -290,6 +319,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       customer_id: editData ? editData.customer_id : 0,
       po_number: editData ? editData.po_number : '',
       products: editData?.order_items?.map((item) => ({
+        product_id: item.product_id,
         product_stock_id: item.product_stock_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
@@ -626,6 +656,10 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                                                       selectedProduct.id
                                                     )
                                                     form.setValue(
+                                                      `products.${index}.product_id`,
+                                                      selectedProduct.product_id
+                                                    )
+                                                    form.setValue(
                                                       `products.${index}.unit_price`,
                                                       selectedProduct.selling_price
                                                     )
@@ -865,6 +899,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                         variant="outline"
                         onClick={() =>
                           append({
+                            product_id: 0,
                             product_stock_id: 0,
                             unit_price: 0,
                             quantity: 0,

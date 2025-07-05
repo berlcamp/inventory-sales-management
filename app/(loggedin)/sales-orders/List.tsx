@@ -1,6 +1,7 @@
 'use client'
 
 import { ConfirmationModal } from '@/components/ConfirmationModal'
+import { ProductLogsModal } from '@/components/ProductLogsModal'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
@@ -45,6 +46,7 @@ export const List = ({}) => {
   const [modalPaymentOpen, setModalPaymentOpen] = useState(false)
   const [modalViewProductsOpen, setModalViewProductsOpen] = useState(false)
   const [modalMarkCompleteOpen, setModalMarkCompleteOpen] = useState(false)
+  const [modalLogsOpen, setModalLogsOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
@@ -58,14 +60,17 @@ export const List = ({}) => {
     setSelectedItem(item)
     setModalAddOpen(true)
   }
-  const handleViewProducts = (item: ItemType) => {
-    setSelectedItem(item)
-    setModalViewProductsOpen(true)
-  }
+
   const handleReceivePayment = (item: ItemType) => {
     setSelectedItem(item)
     setModalPaymentOpen(true)
   }
+
+  const handleLogs = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalLogsOpen(true)
+  }
+
   const handleMarkCompleteConfirmation = (item: ItemType) => {
     setSelectedItem(item)
     setModalMarkCompleteOpen(true)
@@ -126,6 +131,11 @@ export const List = ({}) => {
     PrintClaimSlip(item, user) // Pass the data you want to print
   }
 
+  const handleViewProducts = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalViewProductsOpen(true)
+  }
+
   // Delete Supplier
   const handleDelete = async () => {
     if (selectedItem) {
@@ -173,7 +183,8 @@ export const List = ({}) => {
                   <Transition as={Fragment}>
                     <MenuItems className="app__dropdown_items">
                       <div className="py-1">
-                        {item.status === 'completed' && (
+                        {(item.status === 'reserved' ||
+                          item.status === 'completed') && (
                           <>
                             <MenuItem>
                               <div
@@ -195,7 +206,7 @@ export const List = ({}) => {
                             </MenuItem>
                           </>
                         )}
-                        {item.status === 'draft' && (
+                        {item.status === 'reserved' && (
                           <>
                             <MenuItem>
                               <div
@@ -203,7 +214,7 @@ export const List = ({}) => {
                                 className="app__dropdown_item"
                               >
                                 <PencilIcon className="w-4 h-4" />
-                                <span>Edit S.O. Details</span>
+                                <span>Edit Details</span>
                               </div>
                             </MenuItem>
                             <MenuItem>
@@ -223,11 +234,26 @@ export const List = ({}) => {
                 </Menu>
               </td>
               <td className="app__td">
-                <div>{item.so_number}</div>
+                <div className="font-bold">{item.so_number}</div>
                 <div className="text-xs text-gray-500">
                   {item.date && !isNaN(new Date(item.date).getTime())
                     ? format(new Date(item.date), 'MMMM dd, yyyy')
                     : 'Invalid date'}
+                </div>
+                <div className="mt-2 space-x-2">
+                  <span
+                    className="text-xs text-blue-800 cursor-pointer font-bold"
+                    onClick={() => handleViewProducts(item)}
+                  >
+                    View Products
+                  </span>
+                  <span>|</span>
+                  <span
+                    className="text-xs text-blue-800 cursor-pointer font-medium"
+                    onClick={() => handleLogs(item)}
+                  >
+                    View Logs
+                  </span>
                 </div>
               </td>
               <td className="app__td">
@@ -243,91 +269,107 @@ export const List = ({}) => {
                   maximumFractionDigits: 2
                 })}
               </td>
+              {/* STATUS COLUMN */}
               <td className="app__td">
                 <div className="flex space-x-1">
-                  <div>
-                    {item.status === 'draft' && <Badge>{item.status}</Badge>}
-                    {item.status === 'completed' && (
-                      <Badge variant="green">{item.status}</Badge>
-                    )}
-                  </div>
-                  {item.status === 'draft' &&
-                    user?.user_metadata?.sffo_role === 'admin' && (
-                      <Menu as="div" className="app__menu_container">
-                        <div>
-                          <MenuButton className="app__dropdown_btn">
-                            <ChevronDown
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </MenuButton>
-                        </div>
+                  {item.status === 'reserved' &&
+                  user?.user_metadata?.sffo_role === 'admin' ? (
+                    <Menu as="div" className="relative">
+                      <MenuButton
+                        as={Badge}
+                        className="flex items-center space-x-1 cursor-pointer"
+                      >
+                        <span>{item.status}</span>
+                        <ChevronDown className="h-4 w-4" />
+                      </MenuButton>
 
-                        <Transition as={Fragment}>
-                          <MenuItems className="app__dropdown_items_left">
-                            <div className="py-1">
-                              <MenuItem>
-                                <div
-                                  onClick={() =>
-                                    handleMarkCompleteConfirmation(item)
-                                  }
-                                  className="app__dropdown_item"
-                                >
-                                  <CheckSquare className="w-4 h-4" />
-                                  <span>Mark as Complete</span>
-                                </div>
-                              </MenuItem>
-                            </div>
-                          </MenuItems>
-                        </Transition>
-                      </Menu>
-                    )}
+                      <Transition as={Fragment}>
+                        <MenuItems className="app__dropdown_items_left">
+                          <div className="py-1">
+                            <MenuItem>
+                              <div
+                                onClick={() =>
+                                  handleMarkCompleteConfirmation(item)
+                                }
+                                className="app__dropdown_item"
+                              >
+                                <CheckSquare className="w-4 h-4" />
+                                <span>Mark as Complete</span>
+                              </div>
+                            </MenuItem>
+                          </div>
+                        </MenuItems>
+                      </Transition>
+                    </Menu>
+                  ) : (
+                    <>
+                      {item.status === 'reserved' && (
+                        <Badge>{item.status}</Badge>
+                      )}
+                      {item.status === 'completed' && (
+                        <Badge variant="green">{item.status}</Badge>
+                      )}
+                    </>
+                  )}
                 </div>
               </td>
+
+              {/* PAYMENT STATUS COLUMN */}
               <td className="app__td">
-                {item.status === 'completed' && (
-                  <div className="flex space-x-1">
-                    <div>
+                <div className="flex space-x-1">
+                  {(item.payment_status === 'unpaid' ||
+                    item.payment_status === 'partial' ||
+                    item.payment_status === 'paid') &&
+                  user?.user_metadata?.sffo_role === 'admin' ? (
+                    <Menu as="div" className="relative">
+                      <MenuButton
+                        as={Badge}
+                        className={`flex items-center space-x-1 cursor-pointer ${
+                          item.payment_status === 'partial'
+                            ? 'bg-orange-600 text-white'
+                            : item.payment_status === 'paid'
+                            ? 'bg-green-600 text-white'
+                            : ''
+                        }`}
+                      >
+                        <span>
+                          {item.payment_status === 'partial'
+                            ? 'Partially Paid'
+                            : item.payment_status}
+                        </span>
+                        <ChevronDown className="h-4 w-4" />
+                      </MenuButton>
+
+                      <Transition as={Fragment}>
+                        <MenuItems className="app__dropdown_items_left">
+                          <div className="py-1">
+                            <MenuItem>
+                              <div
+                                onClick={() => handleReceivePayment(item)}
+                                className="app__dropdown_item"
+                              >
+                                <PhilippinePeso className="w-4 h-4" />
+                                <span>Manage Payments</span>
+                              </div>
+                            </MenuItem>
+                          </div>
+                        </MenuItems>
+                      </Transition>
+                    </Menu>
+                  ) : (
+                    <>
                       {item.payment_status === 'unpaid' && (
                         <Badge>{item.payment_status}</Badge>
                       )}
                       {item.payment_status === 'partial' && (
-                        <Badge variant="orange">{item.payment_status}</Badge>
+                        <Badge variant="orange">Partially Paid</Badge>
                       )}
                       {item.payment_status === 'paid' && (
                         <Badge variant="green">{item.payment_status}</Badge>
                       )}
-                    </div>
-                    {user?.user_metadata?.sffo_role === 'admin' && (
-                      <Menu as="div" className="app__menu_container">
-                        <div>
-                          <MenuButton className="app__dropdown_btn">
-                            <ChevronDown
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </MenuButton>
-                        </div>
-
-                        <Transition as={Fragment}>
-                          <MenuItems className="app__dropdown_items_left">
-                            <div className="py-1">
-                              <MenuItem>
-                                <div
-                                  onClick={() => handleReceivePayment(item)}
-                                  className="app__dropdown_item"
-                                >
-                                  <PhilippinePeso className="w-4 h-4" />
-                                  <span>Received Payments</span>
-                                </div>
-                              </MenuItem>
-                            </div>
-                          </MenuItems>
-                        </Transition>
-                      </Menu>
-                    )}
-                  </div>
-                )}
+                    </>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
@@ -363,6 +405,14 @@ export const List = ({}) => {
           isOpen={modalViewProductsOpen}
           editData={selectedItem}
           onClose={() => setModalViewProductsOpen(false)}
+        />
+      )}
+
+      {selectedItem && (
+        <ProductLogsModal
+          isOpen={modalLogsOpen}
+          salesOrderId={selectedItem.id}
+          onClose={() => setModalLogsOpen(false)}
         />
       )}
     </div>

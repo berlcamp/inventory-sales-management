@@ -24,11 +24,12 @@ import {
   PopoverContent,
   PopoverTrigger
 } from '@/components/ui/popover'
+import { Textarea } from '@/components/ui/textarea'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import { useAppDispatch } from '@/store/hook'
+import { useAppDispatch, useAppSelector } from '@/store/hook'
 import { addItem, updateList } from '@/store/listSlice'
-import { Product, PurchaseOrder, Supplier } from '@/types'
+import { Product, PurchaseOrder, RootState, Supplier } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, ChevronsUpDown, PlusIcon, Trash2Icon } from 'lucide-react'
@@ -40,11 +41,14 @@ import { z } from 'zod'
 const FormSchema = z.object({
   supplier_id: z.coerce.number().min(1, 'Supplier is required'),
   date: z.string().min(1, 'PO Date is required'),
+  po_number: z.string().min(1, 'PO Number is required'),
+  remarks: z.string().optional(),
   products: z.array(
     z.object({
       product_id: z.coerce.number().min(1, 'Product is required'),
       quantity: z.coerce.number().min(1, 'Quantity is required'),
       cost: z.coerce.number().min(1, 'Cost is required'),
+      price: z.coerce.number().min(1, 'Selling Price is required'),
       total: z.coerce.number().min(0, 'Total is required')
     })
   )
@@ -69,6 +73,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const dispatch = useAppDispatch()
 
+  const user = useAppSelector((state: RootState) => state.user.user)
+
   // Suppliers Dropdown
   const [open, setOpen] = useState(false)
 
@@ -81,12 +87,14 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     resolver: zodResolver(FormSchema),
     defaultValues: {
       date: '',
+      po_number: '',
       supplier_id: 0,
       products: [
         {
           product_id: 0,
           quantity: 0,
           cost: 0,
+          price: 0,
           total: 0
         }
       ]
@@ -98,6 +106,12 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     control: control,
     name: 'products'
   })
+
+  // get the running total
+  const products = form.watch('products') || []
+  const runningTotal = products.reduce((sum, item) => {
+    return sum + (item.total || 0)
+  }, 0)
 
   // Submit handler
   const onSubmit = async (formdata: FormType) => {
@@ -116,6 +130,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         const newData = {
           date: formdata.date,
           supplier_id: formdata.supplier_id,
+          remarks: formdata.remarks,
           total_amount: total
         }
 
@@ -147,6 +162,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             purchase_order_id: editData.id,
             product_id: product.product_id,
             cost: product.cost,
+            price: product.price,
             quantity: product.quantity
           }))
           // for redux
@@ -154,6 +170,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             purchase_order_id: editData.id,
             product_id: product.product_id,
             cost: product.cost,
+            price: product.price,
             quantity: product.quantity,
             product: productsList?.find(
               (p) => p.id.toString() === product.product_id.toString()
@@ -167,6 +184,14 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           if (insertError) {
             console.error('Error inserting purchase order items:', insertError)
           } else {
+            // Update logs
+            await supabase.from('product_change_logs').insert({
+              po_id: editData.id,
+              user_id: user?.system_user_id,
+              user_name: user?.name,
+              message: `updated this purchase order`
+            })
+
             // Update Redux state
             dispatch(
               updateList({
@@ -188,8 +213,9 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         const newData = {
           date: formdata.date,
           supplier_id: formdata.supplier_id,
-          po_number: generatePONumber(), // Generate the PO number (you can use a custom function)
+          po_number: formdata.po_number, // Generate the PO number (you can use a custom function)
           total_amount: total,
+          remarks: formdata.remarks,
           status: 'draft',
           payment_status: 'unpaid'
         }
@@ -211,6 +237,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             purchase_order_id: newPOId, // Link to the new PO
             product_id: product.product_id,
             cost: product.cost,
+            price: product.price,
             quantity: product.quantity
           }))
           // for redux
@@ -218,6 +245,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             purchase_order_id: newPOId, // Link to the new PO
             product_id: product.product_id,
             cost: product.cost,
+            price: product.price,
             quantity: product.quantity,
             product: productsList?.find(
               (p) => p.id.toString() === product.product_id.toString()
@@ -235,6 +263,14 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
               insertItemsError
             )
           } else {
+            // Update logs
+            await supabase.from('product_change_logs').insert({
+              po_id: newPOId,
+              user_id: user?.system_user_id,
+              user_name: user?.name,
+              message: `added this purchase order`
+            })
+
             // Update Redux with the new data
             dispatch(
               addItem({
@@ -258,32 +294,65 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     }
   }
 
-  function generatePONumber() {
-    const date = new Date()
-    return `PO-${date.getFullYear()}-${(
-      '000' +
-      (Math.floor(Math.random() * 9999) + 1)
-    ).slice(-4)}`
+  async function generatePONumber() {
+    const fullYear = new Date().getFullYear()
+    const shortYear = String(fullYear).slice(-2) // "25"
+
+    const prefix = `PO-HDW-${shortYear}`
+
+    // Match like "PO-HDW-25%"
+    const { data, error } = await supabase
+      .from('purchase_orders')
+      .select('po_number')
+      .ilike('po_number', `${prefix}%`)
+      .order('po_number', { ascending: false })
+      .limit(1)
+
+    if (error) throw error
+
+    let nextSeries = 1
+
+    if (data.length > 0) {
+      const lastPo = data[0].po_number // e.g., "PO-HDW-25010"
+      const lastSeries = parseInt(lastPo.slice(-3), 10) // get last 3 digits
+      nextSeries = lastSeries + 1
+    }
+
+    const paddedSeries = String(nextSeries).padStart(3, '0') // 010
+    const newPoNumber = `${prefix}${paddedSeries}` // PO-HDW-25010
+
+    return newPoNumber
   }
 
   useEffect(() => {
-    form.reset({
-      date: editData ? editData.date : '',
-      supplier_id: editData ? editData.supplier_id : 0,
-      products: editData?.order_items?.map((item) => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        cost: item.cost,
-        total: item.cost * item.quantity // Calculate total (cost * quantity)
-      })) || [
-        {
-          product_id: 0,
-          quantity: 0,
-          cost: 0,
-          total: 0
-        }
-      ]
-    })
+    const initForm = async () => {
+      const poNumber = editData ? editData.po_number : await generatePONumber()
+
+      form.reset({
+        date: editData ? editData.date : '',
+        po_number: poNumber,
+        supplier_id: editData ? editData.supplier_id : 0,
+        products: editData?.order_items?.map((item) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          cost: item.cost,
+          price: item.price ?? 0,
+          total: item.cost * item.quantity
+        })) || [
+          {
+            product_id: 0,
+            quantity: 0,
+            cost: 0,
+            price: 0,
+            total: 0
+          }
+        ]
+      })
+    }
+
+    if (isOpen) {
+      initForm()
+    }
   }, [form, editData, isOpen])
 
   // Fetch on page load
@@ -330,7 +399,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
       {/* Centered panel container */}
       <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <DialogPanel transition className="app__modal_dialog_panel">
+        <DialogPanel transition className="app__modal_dialog_panel_lg">
           {/* Sticky Header */}
           <div className="app__modal_dialog_title_container">
             <DialogTitle as="h3" className="text-base font-medium">
@@ -365,6 +434,24 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                             />
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <FormField
+                      control={form.control}
+                      name="po_number"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="app__formlabel_standard">
+                            PO Number
+                          </FormLabel>
+
+                          <FormControl>
+                            <Input className="app__input_standard" {...field} />
+                          </FormControl>
+                          {/* <FormMessage /> */}
                         </FormItem>
                       )}
                     />
@@ -447,6 +534,24 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       )}
                     />
                   </div>
+                  <div>
+                    <FormField
+                      control={form.control}
+                      name="remarks"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="app__formlabel_standard">
+                            Remarks (Optional)
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Remarks" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <div className="col-span-2">
                     <div className="flex items-center">
                       <div className="flex-grow bg-gray-300 h-px"></div>
@@ -459,7 +564,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                     {fields.map((item, index) => (
                       <div
                         key={item.id}
-                        className="grid grid-cols-5 space-y-2 gap-2 items-center"
+                        className="grid grid-cols-6 space-y-2 gap-2 items-center"
                       >
                         <div>
                           <FormField
@@ -622,6 +727,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                             )}
                           />
                         </div>
+
                         {/* Total Amount Field */}
                         <div>
                           <FormField
@@ -649,6 +755,35 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                           />
                         </div>
                         <div>
+                          <FormField
+                            control={form.control}
+                            name={`products.${index}.price`}
+                            render={({ field }) => (
+                              <FormItem>
+                                {index === 0 && (
+                                  <FormLabel className="app__formlabel_standard">
+                                    Selling Price
+                                  </FormLabel>
+                                )}
+                                <FormControl>
+                                  <Input
+                                    className="app__input_standard"
+                                    placeholder="Selling Price"
+                                    type="number"
+                                    step="any"
+                                    min={1}
+                                    {...field}
+                                    onChange={(e) => {
+                                      field.onChange(e)
+                                    }}
+                                  />
+                                </FormControl>
+                                {/* <FormMessage /> */}
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div>
                           {fields.length > 1 && (
                             <Trash2Icon
                               onClick={() => remove(index)}
@@ -668,6 +803,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                           append({
                             product_id: 0,
                             cost: 0,
+                            price: 0,
                             quantity: 0,
                             total: 0
                           })
@@ -677,6 +813,13 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       </Button>
                     </div>
                   </div>
+                </div>
+                <div className="mt-4 text-right font-semibold text-lg">
+                  Total Amount: &nbsp;
+                  {runningTotal?.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
                 </div>
                 <div className="app__modal_dialog_footer">
                   <Button type="button" onClick={onClose} variant="outline">

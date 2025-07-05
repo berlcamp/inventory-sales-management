@@ -16,6 +16,10 @@ export const ViewProductsModal = ({
   onClose,
   editData
 }: ModalProps) => {
+  const runningTotal = editData.order_items.reduce((sum, item) => {
+    return sum + (item.cost * item.quantity || 0)
+  }, 0)
+
   return (
     <Dialog
       open={isOpen}
@@ -48,8 +52,9 @@ export const ViewProductsModal = ({
                 <tr>
                   <th className="app__th">Product</th>
                   <th className="app__th">Quantity</th>
-                  <th className="app__th">Price</th>
+                  <th className="app__th">Purchase Cost</th>
                   <th className="app__th">Total</th>
+                  <th className="app__th">Selling Price</th>
                 </tr>
               </thead>
               <tbody>
@@ -57,16 +62,40 @@ export const ViewProductsModal = ({
                   <tr key={index} className="app__tr">
                     <td className="app__td">{item.product?.name}</td>
                     <td className="app__td">{item.quantity}</td>
-                    <td className="app__td">{item.cost}</td>
                     <td className="app__td">
-                      {parseFloat(
+                      {item.cost?.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      })}
+                    </td>
+                    <td className="app__td">
+                      {/* {parseFloat(
                         ((item.quantity ?? 0) * (item.cost ?? 0)).toFixed(2)
-                      )}
+                      )} */}
+                      {(
+                        (item.quantity ?? 0) * (item.cost ?? 0)
+                      )?.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      })}
+                    </td>
+                    <td className="app__td">
+                      {item.price?.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      })}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            <div className="mt-4 text-right font-semibold">
+              Total Cost:&nbsp;
+              {runningTotal?.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </div>
           </div>
         </DialogPanel>
       </div>

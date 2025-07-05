@@ -28,7 +28,7 @@ export const StocksModal = ({ editData, onClose, isOpen }: ModalProps) => {
     const fetchData = async () => {
       const { data, error } = await supabase
         .from('product_stocks')
-        .select('*')
+        .select('*,purchase_order:purchase_order_id(po_number)')
         .eq('product_id', editData?.id)
 
       if (error) {
@@ -69,8 +69,12 @@ export const StocksModal = ({ editData, onClose, isOpen }: ModalProps) => {
           </div>
           {/* Scrollable Form Content */}
           <div className="app__modal_dialog_content">
+            <div className="mt-4 text-right font-semibold">
+              Total Available Stocks: &nbsp;
+              {editData.current_quantity}
+            </div>
             {/* Pass Redux data to List Table */}
-            <StocksList product={editData} />
+            <StocksList />
           </div>
         </DialogPanel>
       </div>

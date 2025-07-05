@@ -2,8 +2,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { User } from '@supabase/supabase-js'
 
+interface ExtendedUser extends User {
+  system_user_id?: number
+  name?: string
+}
+
 interface UserState {
-  user: User | null
+  user: ExtendedUser | null
 }
 
 const initialState: UserState = {
@@ -14,7 +19,7 @@ const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<User | null>) => {
+    setUser: (state, action: PayloadAction<ExtendedUser | null>) => {
       state.user = action.payload
     }
   }

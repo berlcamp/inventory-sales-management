@@ -57,7 +57,9 @@ interface ModalProps {
 const FormSchema = z.object({
   date: z.string().min(1, 'Amount is required'),
   amount: z.coerce.number().min(1, 'Amount is required'),
-  type: z.string().min(1, 'Payment Type is required')
+  type: z.string().min(1, 'Payment Type is required'),
+  bank: z.string().optional(),
+  due_date: z.string().optional()
 })
 type FormType = z.infer<typeof FormSchema>
 
@@ -77,7 +79,9 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
     defaultValues: {
       date: '',
       amount: 0,
-      type: ''
+      type: '',
+      bank: '',
+      due_date: ''
     }
   })
 
@@ -91,6 +95,8 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
         date: formdata.date,
         amount: formdata.amount,
         type: formdata.type,
+        bank: formdata.bank,
+        due_date: formdata.due_date,
         sales_order_id: editData.id
       }
 
@@ -121,7 +127,9 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
         form.reset({
           date: '',
           amount: 0,
-          type: ''
+          type: '',
+          bank: '',
+          due_date: ''
         })
       }
 
@@ -139,7 +147,6 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
     setIsModalOpen(true)
   }
 
-  // Delete Supplier
   const handleDelete = async () => {
     if (selectedItem) {
       const { error } = await supabase
@@ -209,7 +216,7 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
       {/* Centered panel container */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPanel transition className="app__modal_dialog_panel_sm">
+        <DialogPanel transition className="app__modal_dialog_panel">
           {/* Sticky Header */}
           <div className="app__modal_dialog_title_container">
             <DialogTitle as="h3" className="text-base font-medium flex-1">
@@ -290,8 +297,13 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="Cash">Cash</SelectItem>
+                                <SelectItem value="PDC">
+                                  Cheque (PDC)
+                                </SelectItem>
                                 <SelectItem value="Cheque">Cheque</SelectItem>
-                                <SelectItem value="Bank">Bank</SelectItem>
+                                <SelectItem value="Bank Deposit">
+                                  Bank Deposit
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -299,16 +311,63 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                         )}
                       />
                     </div>
+                    {form.watch('type') === 'PDC' && (
+                      <div>
+                        <FormField
+                          control={form.control}
+                          name="due_date"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="app__formlabel_standard">
+                                PDC Due Date
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  className="app__input_date"
+                                  type="date"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                    {form.watch('type') !== 'Cash' && (
+                      <div>
+                        <FormField
+                          control={form.control}
+                          name="bank"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="app__formlabel_standard">
+                                Bank Details
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  className="app__input_standard"
+                                  placeholder="Bank details"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
                   </div>
-                  <div className="app__modal_dialog_footer border-t-0! mt-0">
+                  <div className="pt-6 mt-0 flex space-x-4">
                     <Button type="submit">
-                      <span>{isSubmitting ? 'Saving..' : 'Save Payment'}</span>
+                      <span>{isSubmitting ? 'Saving..' : 'Received'}</span>
                     </Button>
                   </div>
                 </form>
               </Form>
             )}
-            <div>Received Payments</div>
+            <hr />
+            <div className="mt-4 text-center">Payments Received</div>
             <div className="flex space-x-4 border-t pt-2">
               <div>
                 <span className="text-xs">Sales Order Total</span>{' '}
@@ -369,7 +428,11 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                         : 'Invalid date'}
                     </td>
                     <td className="app__td">{item.amount}</td>
-                    <td className="app__td">{item.type}</td>
+                    <td className="app__td">
+                      {item.type}{' '}
+                      {item.due_date && `(Due Date: ${item.due_date})`}{' '}
+                      {item.bank && `(Bank: ${item.bank})`}
+                    </td>
                   </tr>
                 ))}
                 {list.length === 0 && (

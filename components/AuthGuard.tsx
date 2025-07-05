@@ -20,7 +20,28 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       if (!user) {
         window.location.href = '/login'
       } else {
-        dispatch(setUser(user))
+        const { data: systemUser, error: userError } = await supabase
+          .from('users')
+          .select()
+          .eq('email', user.email)
+          .eq('is_active', true)
+          .single()
+
+        if (userError || !systemUser) {
+          console.error('System user not found or inactive:', userError)
+          await supabase.auth.signOut()
+          router.replace('/auth/unverified')
+          setLoading(false)
+          return
+        }
+
+        dispatch(
+          setUser({
+            ...user,
+            system_user_id: systemUser.id,
+            name: systemUser.name
+          })
+        )
       }
 
       setLoading(false)

@@ -1,6 +1,7 @@
 'use client'
 
 import { ConfirmationModal } from '@/components/ConfirmationModal'
+import { ProductLogsModal } from '@/components/ProductLogsModal'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
@@ -46,6 +47,7 @@ export const List = ({}) => {
   const [modalViewProductsOpen, setModalViewProductsOpen] = useState(false)
   const [modalMarkCompleteOpen, setModalMarkCompleteOpen] = useState(false)
   const [modalMarkApproveOpen, setModalMarkApproveOpen] = useState(false)
+  const [modalLogsOpen, setModalLogsOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
@@ -58,6 +60,11 @@ export const List = ({}) => {
   const handleEdit = (item: ItemType) => {
     setSelectedItem(item)
     setModalAddOpen(true)
+  }
+
+  const handleLogs = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalLogsOpen(true)
   }
 
   const handleViewProducts = (item: ItemType) => {
@@ -80,21 +87,50 @@ export const List = ({}) => {
   const handleMarkComplete = async () => {
     if (!selectedItem) return
 
-    await supabase
+    const { id: purchaseOrderId, order_items: products } = selectedItem
+
+    // 1. Mark PO as completed
+    const { error: updateError } = await supabase
       .from('purchase_orders')
-      .update({ status: 'completed' })
-      .eq('id', selectedItem.id)
+      .update({ status: 'received' })
+      .eq('id', purchaseOrderId)
 
-    toast.success('Purchased Order updated successfully!')
+    if (updateError) {
+      toast.error('Failed to mark as received.')
+      return
+    }
 
-    // Update Redux state
+    // 2. Insert product stock records
+    const stockEntries = products.map((item) => ({
+      product_id: item.product_id,
+      cost: item.cost,
+      selling_price: item.price,
+      quantity: item.quantity,
+      remaining_quantity: item.quantity, // Set remaining = quantity on purchase
+      purchase_date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+      purchase_order_id: purchaseOrderId
+    }))
+
+    const { error: stockError } = await supabase
+      .from('product_stocks')
+      .insert(stockEntries)
+
+    if (stockError) {
+      toast.error('Failed to update product stocks.')
+      return
+    }
+
+    // 3. Notify and update Redux state
+    toast.success('Purchase Order received and stock updated!')
+
     dispatch(
       updateList({
         ...selectedItem,
-        status: 'completed',
-        id: selectedItem.id
+        status: 'received',
+        id: purchaseOrderId
       })
     )
+
     setModalMarkCompleteOpen(false)
   }
 
@@ -180,7 +216,8 @@ export const List = ({}) => {
                   >
                     <MenuItems className="app__dropdown_items">
                       <div className="py-1">
-                        {item.status === 'completed' && (
+                        {(item.status === 'approved' ||
+                          item.status === 'received') && (
                           <>
                             <MenuItem>
                               <div
@@ -210,7 +247,7 @@ export const List = ({}) => {
                                 className="app__dropdown_item"
                               >
                                 <PencilIcon className="w-4 h-4" />
-                                <span>Edit P.O. Details</span>
+                                <span>Edit Details</span>
                               </div>
                             </MenuItem>
                             <MenuItem>
@@ -230,11 +267,26 @@ export const List = ({}) => {
                 </Menu>
               </td>
               <td className="app__td">
-                <div>{item.po_number}</div>
+                <div className="font-bold">{item.po_number}</div>
                 <div className="text-xs text-gray-500">
                   {item.date && !isNaN(new Date(item.date).getTime())
                     ? format(new Date(item.date), 'MMMM dd, yyyy')
                     : 'Invalid date'}
+                </div>
+                <div className="mt-2 space-x-2">
+                  <span
+                    className="text-xs text-blue-800 cursor-pointer font-bold"
+                    onClick={() => handleViewProducts(item)}
+                  >
+                    View Products
+                  </span>
+                  <span>|</span>
+                  <span
+                    className="text-xs text-blue-800 cursor-pointer font-medium"
+                    onClick={() => handleLogs(item)}
+                  >
+                    View Logs
+                  </span>
                 </div>
               </td>
               <td className="app__td">
@@ -252,103 +304,103 @@ export const List = ({}) => {
               </td>
               <td className="app__td">
                 <div className="flex space-x-1">
-                  <div>
-                    {item.status === 'draft' && <Badge>{item.status}</Badge>}
-                    {item.status === 'completed' && (
-                      <Badge variant="green">{item.status}</Badge>
-                    )}
-                    {item.status === 'approved' && (
-                      <Badge variant="orange">{item.status}</Badge>
-                    )}
-                  </div>
+                  {/* Badge + Dropdown for DRAFT */}
                   {item.status === 'draft' &&
-                    user?.user_metadata?.sffo_role === 'admin' && (
-                      <Menu as="div" className="app__menu_container">
-                        <div>
-                          <MenuButton className="app__dropdown_btn">
-                            <ChevronDown
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </MenuButton>
-                        </div>
+                  user?.user_metadata?.sffo_role === 'admin' ? (
+                    <Menu as="div" className="relative inline-block text-left">
+                      <Menu.Button as="div">
+                        <Badge className="flex items-center space-x-1 cursor-pointer">
+                          <span>{item.status}</span>
+                          <ChevronDown className="h-4 w-4" />
+                        </Badge>
+                      </Menu.Button>
+                      <Transition as={Fragment}>
+                        <MenuItems className="app__dropdown_items_left">
+                          <div className="py-1">
+                            <MenuItem>
+                              <div
+                                onClick={() =>
+                                  handleMarkApproveConfirmation(item)
+                                }
+                                className="app__dropdown_item"
+                              >
+                                <CheckSquare className="w-4 h-4" />
+                                <span>Mark as Approved</span>
+                              </div>
+                            </MenuItem>
+                          </div>
+                        </MenuItems>
+                      </Transition>
+                    </Menu>
+                  ) : item.status === 'draft' ? (
+                    <Badge>{item.status}</Badge>
+                  ) : null}
 
-                        <Transition as={Fragment}>
-                          <MenuItems className="app__dropdown_items_left">
-                            <div className="py-1">
-                              <MenuItem>
-                                <div
-                                  onClick={() =>
-                                    handleMarkApproveConfirmation(item)
-                                  }
-                                  className="app__dropdown_item"
-                                >
-                                  <CheckSquare className="w-4 h-4" />
-                                  <span>Mark as Approved</span>
-                                </div>
-                              </MenuItem>
-                            </div>
-                          </MenuItems>
-                        </Transition>
-                      </Menu>
-                    )}
+                  {/* Badge + Dropdown for APPROVED */}
                   {item.status === 'approved' &&
-                    user?.user_metadata?.sffo_role === 'admin' && (
-                      <Menu as="div" className="app__menu_container">
-                        <div>
-                          <MenuButton className="app__dropdown_btn">
-                            <ChevronDown
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </MenuButton>
-                        </div>
+                  user?.user_metadata?.sffo_role === 'admin' ? (
+                    <Menu as="div" className="relative inline-block text-left">
+                      <Menu.Button as="div">
+                        <Badge
+                          variant="orange"
+                          className="flex items-center space-x-1 cursor-pointer"
+                        >
+                          <span>{item.status}</span>
+                          <ChevronDown className="h-4 w-4" />
+                        </Badge>
+                      </Menu.Button>
+                      <Transition as={Fragment}>
+                        <MenuItems className="app__dropdown_items_left">
+                          <div className="py-1">
+                            <MenuItem>
+                              <div
+                                onClick={() =>
+                                  handleMarkCompleteConfirmation(item)
+                                }
+                                className="app__dropdown_item"
+                              >
+                                <CheckSquare className="w-4 h-4" />
+                                <span>Mark as Received</span>
+                              </div>
+                            </MenuItem>
+                          </div>
+                        </MenuItems>
+                      </Transition>
+                    </Menu>
+                  ) : item.status === 'approved' ? (
+                    <Badge variant="orange">{item.status}</Badge>
+                  ) : null}
 
-                        <Transition as={Fragment}>
-                          <MenuItems className="app__dropdown_items_left">
-                            <div className="py-1">
-                              <MenuItem>
-                                <div
-                                  onClick={() =>
-                                    handleMarkCompleteConfirmation(item)
-                                  }
-                                  className="app__dropdown_item"
-                                >
-                                  <CheckSquare className="w-4 h-4" />
-                                  <span>Mark as Complete</span>
-                                </div>
-                              </MenuItem>
-                            </div>
-                          </MenuItems>
-                        </Transition>
-                      </Menu>
-                    )}
+                  {/* Received badge (no dropdown) */}
+                  {item.status === 'received' && (
+                    <Badge variant="green">{item.status}</Badge>
+                  )}
                 </div>
               </td>
+
               <td className="app__td">
                 {item.status === 'completed' && (
                   <div className="flex space-x-1">
-                    <div>
-                      {item.payment_status === 'unpaid' && (
-                        <Badge>{item.payment_status}</Badge>
-                      )}
-                      {item.payment_status === 'partial' && (
-                        <Badge variant="orange">{item.payment_status}</Badge>
-                      )}
-                      {item.payment_status === 'paid' && (
-                        <Badge variant="green">{item.payment_status}</Badge>
-                      )}
-                    </div>
-                    {user?.user_metadata?.sffo_role === 'admin' && (
-                      <Menu as="div" className="app__menu_container">
-                        <div>
-                          <MenuButton className="app__dropdown_btn">
-                            <ChevronDown
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </MenuButton>
-                        </div>
+                    {user?.user_metadata?.sffo_role === 'admin' ? (
+                      <Menu
+                        as="div"
+                        className="relative inline-block text-left"
+                      >
+                        <Menu.Button as="div">
+                          <Badge
+                            variant={
+                              item.payment_status === 'paid'
+                                ? 'green'
+                                : item.payment_status === 'partial'
+                                ? 'orange'
+                                : undefined
+                            }
+                            className="flex items-center space-x-1 cursor-pointer"
+                          >
+                            <span>{item.payment_status}</span>
+                            <ChevronDown className="h-4 w-4" />
+                          </Badge>
+                        </Menu.Button>
 
                         <Transition as={Fragment}>
                           <MenuItems className="app__dropdown_items_left">
@@ -359,13 +411,25 @@ export const List = ({}) => {
                                   className="app__dropdown_item"
                                 >
                                   <PhilippinePeso className="w-4 h-4" />
-                                  <span>Payments</span>
+                                  <span>Manage Payments</span>
                                 </div>
                               </MenuItem>
                             </div>
                           </MenuItems>
                         </Transition>
                       </Menu>
+                    ) : (
+                      <Badge
+                        variant={
+                          item.payment_status === 'paid'
+                            ? 'green'
+                            : item.payment_status === 'partial'
+                            ? 'orange'
+                            : undefined
+                        }
+                      >
+                        {item.payment_status}
+                      </Badge>
                     )}
                   </div>
                 )}
@@ -391,7 +455,7 @@ export const List = ({}) => {
         isOpen={modalMarkCompleteOpen}
         onClose={() => setModalMarkCompleteOpen(false)}
         onConfirm={handleMarkComplete}
-        message="By marking as complete, the purchased products will automatically be added to product stocks. Are you sure you want to mark this as complete?"
+        message="By marking as received, the purchased products will automatically be added to product stocks. Are you sure you want to mark this as received?"
       />
       <AddModal
         isOpen={modalAddOpen}
@@ -410,6 +474,13 @@ export const List = ({}) => {
           isOpen={modalViewProductsOpen}
           editData={selectedItem}
           onClose={() => setModalViewProductsOpen(false)}
+        />
+      )}
+      {selectedItem && (
+        <ProductLogsModal
+          isOpen={modalLogsOpen}
+          POId={selectedItem.id}
+          onClose={() => setModalLogsOpen(false)}
         />
       )}
     </div>

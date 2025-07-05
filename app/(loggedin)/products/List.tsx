@@ -1,5 +1,6 @@
 'use client'
 import { ConfirmationModal } from '@/components/ConfirmationModal'
+import { ProductLogsModal } from '@/components/ProductLogsModal'
 import { countAvailableStocks } from '@/lib/helpers'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
@@ -17,6 +18,7 @@ import { Fragment, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useSelector } from 'react-redux'
 import { AddModal } from './AddModal'
+import { SalesModal } from './SalesModal'
 import { StocksModal } from './StocksModal'
 
 // Always update this on other pages
@@ -30,6 +32,8 @@ export const List = ({}) => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalAddOpen, setModalAddOpen] = useState(false)
   const [modalStockOpen, setModalStockOpen] = useState(false)
+  const [modalSalesOpen, setModalSalesOpen] = useState(false)
+  const [modalLogsOpen, setModalLogsOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
@@ -47,6 +51,16 @@ export const List = ({}) => {
   const handleManageStocks = (item: ItemType) => {
     setSelectedItem(item)
     setModalStockOpen(true)
+  }
+
+  const handleLogs = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalLogsOpen(true)
+  }
+
+  const handleViewSales = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalSalesOpen(true)
   }
 
   // Delete Supplier
@@ -134,23 +148,35 @@ export const List = ({}) => {
                   </Transition>
                 </Menu>
               </td>
-              <td className="app__td">{item.name}</td>
+              <td className="app__td">
+                <div>{item.name}</div>
+                <div className="mt-2 space-x-2">
+                  <span
+                    className="text-xs text-blue-800 cursor-pointer font-medium"
+                    onClick={() => handleViewSales(item)}
+                  >
+                    View Sales
+                  </span>
+                  <span>|</span>
+                  <span
+                    className="text-xs text-blue-800 cursor-pointer font-medium"
+                    onClick={() => handleManageStocks(item)}
+                  >
+                    Manage Prices
+                  </span>
+                  <span>|</span>
+                  <span
+                    className="text-xs text-blue-800 cursor-pointer font-medium"
+                    onClick={() => handleLogs(item)}
+                  >
+                    View Logs
+                  </span>
+                </div>
+              </td>
               <td className="app__td">{item.category?.name}</td>
               <td className="app__td">
                 {item.stocks && (
-                  <div
-                    className="flex items-center space-x-2 cursor-pointer"
-                    onClick={() => handleManageStocks(item)}
-                  >
-                    <span>{countAvailableStocks(item.stocks)}</span>
-                    <span>|</span>
-                    <div className="flex space-x-1">
-                      <LayersIcon className="w-4 h-4" />
-                      <span className="text-xs text-blue-800">
-                        Manage Stocks
-                      </span>
-                    </div>
-                  </div>
+                  <span>{countAvailableStocks(item.stocks)}</span>
                 )}
               </td>
             </tr>
@@ -174,6 +200,21 @@ export const List = ({}) => {
           isOpen={modalStockOpen}
           editData={selectedItem}
           onClose={() => setModalStockOpen(false)}
+        />
+      )}
+      {selectedItem && (
+        <SalesModal
+          isOpen={modalSalesOpen}
+          productId={selectedItem.id}
+          onClose={() => setModalSalesOpen(false)}
+        />
+      )}
+
+      {selectedItem && (
+        <ProductLogsModal
+          isOpen={modalLogsOpen}
+          productId={selectedItem.id}
+          onClose={() => setModalLogsOpen(false)}
         />
       )}
     </div>
