@@ -141,7 +141,7 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card className="bg-blue-100">
+      <Card className="bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Total Sales</CardTitle>
         </CardHeader>
@@ -156,7 +156,7 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card className="bg-blue-100">
+      <Card className="bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Sales Orders</CardTitle>
         </CardHeader>
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card className="bg-blue-100">
+      <Card className="bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Total Purchases</CardTitle>
         </CardHeader>
@@ -180,7 +180,7 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card className="bg-blue-100">
+      <Card className="bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Outstanding Payments</CardTitle>
         </CardHeader>

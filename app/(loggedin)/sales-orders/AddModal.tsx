@@ -41,6 +41,7 @@ const FormSchema = z.object({
   customer_id: z.coerce.number().min(1, 'Customer is required'),
   date: z.string().min(1, 'PO Date is required'),
   po_number: z.string().optional(),
+  so_number: z.string().min(1, 'SO Number is required'),
   products: z.array(
     z.object({
       product_id: z.coerce.number().min(1, 'Product is required'),
@@ -96,6 +97,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     defaultValues: {
       date: '',
       po_number: '',
+      so_number: '',
       customer_id: 0,
       products: [
         {
@@ -136,7 +138,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           date: formdata.date,
           customer_id: formdata.customer_id,
           total_amount: total,
-          po_number: formdata.po_number ?? ''
+          po_number: formdata.po_number ?? '',
+          so_number: formdata.so_number ?? ''
         }
 
         // Step 1: Delete existing sales order items
@@ -223,7 +226,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         const newData = {
           date: formdata.date,
           customer_id: formdata.customer_id,
-          so_number: generateSONumber(), // Generate the SO number (you can use a custom function)
+          so_number: formdata.so_number,
           po_number: formdata.po_number ?? '',
           total_amount: total,
           status: 'draft',
@@ -305,36 +308,66 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     }
   }
 
-  function generateSONumber() {
-    const date = new Date()
-    return `SO-${date.getFullYear()}-${(
-      '000' +
-      (Math.floor(Math.random() * 9999) + 1)
-    ).slice(-4)}`
+  async function generateSONumber() {
+    const fullYear = new Date().getFullYear()
+    const shortYear = String(fullYear).slice(-2) // "25"
+
+    const prefix = `${shortYear}`
+
+    // Match like "25%"
+    const { data, error } = await supabase
+      .from('sales_orders')
+      .select('so_number')
+      .ilike('so_number', `${prefix}%`)
+      .order('so_number', { ascending: false })
+      .limit(1)
+
+    if (error) throw error
+
+    let nextSeries = 1
+
+    if (data.length > 0) {
+      const lastPo = data[0].so_number // e.g., "PO-HDW-25010"
+      const lastSeries = parseInt(lastPo.slice(-3), 10) // get last 3 digits
+      nextSeries = lastSeries + 1
+    }
+
+    const paddedSeries = String(nextSeries).padStart(3, '0') // 010
+    const newPoNumber = `${prefix}${paddedSeries}` // PO-HDW-25010
+
+    return newPoNumber
   }
 
   useEffect(() => {
-    form.reset({
-      date: editData ? editData.date : '',
-      customer_id: editData ? editData.customer_id : 0,
-      po_number: editData ? editData.po_number : '',
-      products: editData?.order_items?.map((item) => ({
-        product_id: item.product_id,
-        product_stock_id: item.product_stock_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        discount: item.discount,
-        total: item.unit_price * item.quantity // Calculate total (cost * quantity)
-      })) || [
-        {
-          product_stock_id: 0,
-          quantity: 0,
-          unit_price: 0,
-          discount: 0,
-          total: 0
-        }
-      ]
-    })
+    const initForm = async () => {
+      const soNumber = editData ? editData.so_number : await generateSONumber()
+
+      form.reset({
+        date: editData ? editData.date : '',
+        customer_id: editData ? editData.customer_id : 0,
+        po_number: editData ? editData.po_number : '',
+        so_number: soNumber,
+        products: editData?.order_items?.map((item) => ({
+          product_id: item.product_id,
+          product_stock_id: item.product_stock_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount: item.discount,
+          total: item.unit_price * item.quantity // Calculate total (cost * quantity)
+        })) || [
+          {
+            product_stock_id: 0,
+            quantity: 0,
+            unit_price: 0,
+            discount: 0,
+            total: 0
+          }
+        ]
+      })
+    }
+    if (isOpen) {
+      initForm()
+    }
   }, [form, editData, isOpen])
 
   // Fetch on page load
@@ -431,6 +464,24 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                             />
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <FormField
+                      control={form.control}
+                      name="so_number"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="app__formlabel_standard">
+                            SO Number
+                          </FormLabel>
+
+                          <FormControl>
+                            <Input className="app__input_standard" {...field} />
+                          </FormControl>
+                          {/* <FormMessage /> */}
                         </FormItem>
                       )}
                     />

@@ -131,6 +131,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           date: formdata.date,
           supplier_id: formdata.supplier_id,
           remarks: formdata.remarks,
+          po_number: formdata.po_number,
           total_amount: total
         }
 
@@ -197,7 +198,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
               updateList({
                 ...editData,
                 ...newData,
-                po_number: editData.po_number,
+                po_number: formdata.po_number,
                 id: editData.id,
                 supplier: suppliers?.find(
                   (c) => c.id.toString() === formdata.supplier_id.toString()
