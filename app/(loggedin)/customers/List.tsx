@@ -1,6 +1,7 @@
 'use client'
 
 import { ConfirmationModal } from '@/components/ConfirmationModal'
+import { CustomerOrdersModal } from '@/components/CustomerOrdersModal'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { deleteItem } from '@/store/listSlice'
@@ -28,6 +29,7 @@ export const List = ({}) => {
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalAddOpen, setModalAddOpen] = useState(false)
+  const [modalCustomerOpen, setModalCustomerOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
@@ -40,6 +42,11 @@ export const List = ({}) => {
   const handleEdit = (item: ItemType) => {
     setSelectedItem(item)
     setModalAddOpen(true)
+  }
+
+  const handleCustomerOrder = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalCustomerOpen(true)
   }
 
   // Delete Supplier
@@ -122,7 +129,17 @@ export const List = ({}) => {
                   </Transition>
                 </Menu>
               </td>
-              <td className="app__td">{item.name}</td>
+              <td className="app__td">
+                <div className="font-medium">{item.name}</div>
+                <div className="mt-2 space-x-2">
+                  <span
+                    className="text-xs text-blue-800 cursor-pointer font-medium"
+                    onClick={() => handleCustomerOrder(item)}
+                  >
+                    View Order Transactions
+                  </span>
+                </div>
+              </td>
               <td className="app__td">{item.contact_number}</td>
               <td className="app__td">{item.address}</td>
             </tr>
@@ -141,6 +158,14 @@ export const List = ({}) => {
         editData={selectedItem}
         onClose={() => setModalAddOpen(false)}
       />
+      {selectedItem && (
+        <CustomerOrdersModal
+          isOpen={modalCustomerOpen}
+          customerId={selectedItem.id ?? 0}
+          name={selectedItem.name ?? ''}
+          onClose={() => setModalCustomerOpen(false)}
+        />
+      )}
     </div>
   )
 }

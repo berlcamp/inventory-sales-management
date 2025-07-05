@@ -68,6 +68,7 @@ export const SalesModal = ({ isOpen, onClose, productId }: ModalProps) => {
                   <tr>
                     <th className="app__th">Date</th>
                     <th className="app__th">Customer</th>
+                    <th className="app__th">SO No.</th>
                     <th className="app__th">Unit Price</th>
                     <th className="app__th">Quantity</th>
                     <th className="app__th">Total</th>
@@ -90,6 +91,7 @@ export const SalesModal = ({ isOpen, onClose, productId }: ModalProps) => {
                           {item.sales_order?.customer?.name}
                         </span>
                       </td>
+                      <td className="app__td">{item.sales_order?.so_number}</td>
                       <td className="app__td">{item.unit_price}</td>
                       <td className="app__td">{item.quantity}</td>
                       <td className="app__td">{item.total}</td>

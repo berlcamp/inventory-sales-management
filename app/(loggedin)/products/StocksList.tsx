@@ -56,7 +56,6 @@ export const StocksList = () => {
   return (
     <div className="overflow-x-none pb-20">
       <div className="app__title">
-        <h1 className="text-lg capitalize">Stocks</h1>
         {/* <Button onClick={() => setModalAddOpen(true)} className="ml-auto">
           Add Stock
         </Button> */}
@@ -88,7 +87,11 @@ export const StocksList = () => {
               <td className="app__td">{item.quantity}</td>
               <td className="app__td">{item.cost}</td>
               <td className="app__td">{item.selling_price}</td>
-              <td className="app__td">{item.remaining_quantity}</td>
+              <td className="app__td">
+                <span className="font-bold text-lg">
+                  {item.remaining_quantity}
+                </span>
+              </td>
               <td className="app__td">
                 <div className="flex items-center space-x-2">
                   <div

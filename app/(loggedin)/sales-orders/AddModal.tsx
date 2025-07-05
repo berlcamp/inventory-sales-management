@@ -475,7 +475,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="app__formlabel_standard">
-                            SO Number
+                            Sales Order Number
                           </FormLabel>
 
                           <FormControl>
@@ -563,6 +563,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                         </FormItem>
                       )}
                     />
+                  </div>
+                  <div>
                     <FormField
                       control={form.control}
                       name="po_number"

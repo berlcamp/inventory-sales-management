@@ -1,6 +1,7 @@
 'use client'
 
 import { ConfirmationModal } from '@/components/ConfirmationModal'
+import { CustomerOrdersModal } from '@/components/CustomerOrdersModal'
 import { ProductLogsModal } from '@/components/ProductLogsModal'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase/client'
@@ -47,6 +48,7 @@ export const List = ({}) => {
   const [modalViewProductsOpen, setModalViewProductsOpen] = useState(false)
   const [modalMarkCompleteOpen, setModalMarkCompleteOpen] = useState(false)
   const [modalLogsOpen, setModalLogsOpen] = useState(false)
+  const [modalCustomerOpen, setModalCustomerOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
@@ -69,6 +71,10 @@ export const List = ({}) => {
   const handleLogs = (item: ItemType) => {
     setSelectedItem(item)
     setModalLogsOpen(true)
+  }
+  const handleCustomerOrder = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalCustomerOpen(true)
   }
 
   const handleMarkCompleteConfirmation = (item: ItemType) => {
@@ -257,9 +263,17 @@ export const List = ({}) => {
                 </div>
               </td>
               <td className="app__td">
-                <div>{item.customer?.name}</div>
+                <div className="font-medium">{item.customer?.name}</div>
                 <div className="text-xs text-gray-500">
                   {item.customer?.address}
+                </div>
+                <div className="mt-2 space-x-2">
+                  <span
+                    className="text-xs text-blue-800 cursor-pointer font-medium"
+                    onClick={() => handleCustomerOrder(item)}
+                  >
+                    View Order Transactions
+                  </span>
                 </div>
               </td>
               <td className="app__td">
@@ -413,6 +427,14 @@ export const List = ({}) => {
           isOpen={modalLogsOpen}
           salesOrderId={selectedItem.id}
           onClose={() => setModalLogsOpen(false)}
+        />
+      )}
+      {selectedItem && (
+        <CustomerOrdersModal
+          isOpen={modalCustomerOpen}
+          customerId={selectedItem.customer_id ?? 0}
+          name={selectedItem.customer?.name ?? ''}
+          onClose={() => setModalCustomerOpen(false)}
         />
       )}
     </div>

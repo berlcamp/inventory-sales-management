@@ -2,73 +2,44 @@
 'use client'
 
 import { supabase } from '@/lib/supabase/client'
-import { ProductStockLog } from '@/types'
+import { SalesOrder } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { format } from 'date-fns'
 import { useEffect, useState } from 'react'
 import { Button } from './ui/button'
 
 // Always update this on other pages
-type ItemType = ProductStockLog
+type ItemType = SalesOrder
 
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
-  stockId?: number
-  productId?: number
-  salesOrderId?: number
-  POId?: number
+  customerId: number
+  name: string
 }
 
-export const ProductLogsModal = ({
+export const CustomerOrdersModal = ({
   isOpen,
   onClose,
-  stockId,
-  productId,
-  salesOrderId,
-  POId
+  customerId,
+  name
 }: ModalProps) => {
   //
-  const [logs, setLogs] = useState<ProductStockLog[] | null>([])
+  const [logs, setLogs] = useState<SalesOrder[] | null>([])
 
   useEffect(() => {
     const initForm = async () => {
-      console.log('POId', POId)
-
-      if (stockId) {
-        const { data } = await supabase
-          .from('product_change_logs')
-          .select()
-          .eq('product_stock_id', stockId)
-        setLogs(data)
-      }
-      if (productId) {
-        const { data } = await supabase
-          .from('product_change_logs')
-          .select()
-          .eq('product_id', productId)
-        setLogs(data)
-      }
-      if (salesOrderId) {
-        const { data } = await supabase
-          .from('product_change_logs')
-          .select()
-          .eq('sales_order_id', salesOrderId)
-        setLogs(data)
-      }
-      if (POId) {
-        const { data } = await supabase
-          .from('product_change_logs')
-          .select()
-          .eq('po_id', POId)
-        setLogs(data)
-      }
+      const { data } = await supabase
+        .from('sales_orders')
+        .select('*,order_items:sales_order_items(*,product:product_id(*))')
+        .eq('customer_id', customerId)
+      setLogs(data)
     }
 
     if (isOpen) {
       initForm()
     }
-  }, [stockId, POId, salesOrderId, productId, isOpen])
+  }, [customerId, isOpen])
 
   return (
     <Dialog
@@ -89,7 +60,7 @@ export const ProductLogsModal = ({
           {/* Sticky Header */}
           <div className="app__modal_dialog_title_container">
             <DialogTitle as="h3" className="text-base font-medium flex-1">
-              Logs
+              Orders of {name}
             </DialogTitle>
             <Button type="button" onClick={onClose} variant="outline">
               Close
@@ -99,13 +70,14 @@ export const ProductLogsModal = ({
           <div className="app__modal_dialog_content">
             <div className="overflow-x-none pb-20">
               <table className="app__table">
-                {/* <thead className="app__thead">
+                <thead className="app__thead">
                   <tr>
                     <th className="app__th">Date</th>
-                    <th className="app__th">User</th>
-                    <th className="app__th">Log</th>
+                    <th className="app__th">SO Number</th>
+                    <th className="app__th">Total Amount</th>
+                    <th className="app__th">Products</th>
                   </tr>
-                </thead> */}
+                </thead>
                 <tbody>
                   {logs?.map((item: ItemType) => (
                     <tr key={item.id} className="app__tr">
@@ -116,15 +88,30 @@ export const ProductLogsModal = ({
                           : 'Invalid date'}
                       </td>
                       <td className="app__td">
-                        <span className="font-bold">{item.user_name}</span>{' '}
-                        {item.message}
+                        <span className="font-bold">{item.so_number}</span>
+                      </td>
+                      <td className="app__td">
+                        <span className="font-bold">
+                          {item.total_amount.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
+                        </span>
+                      </td>
+                      <td className="app__td">
+                        <span>
+                          {item.order_items.length > 0 &&
+                            item.order_items.map((item) => (
+                              <div key={item.id}>{item.product?.name}</div>
+                            ))}
+                        </span>
                       </td>
                     </tr>
                   ))}
                   {logs?.length === 0 && (
                     <tr className="app__tr">
-                      <td colSpan={2} className="app__td">
-                        No logs found
+                      <td colSpan={3} className="app__td">
+                        No change logs found
                       </td>
                     </tr>
                   )}

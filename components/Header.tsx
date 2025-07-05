@@ -17,24 +17,31 @@ export async function Header() {
 
   return (
     <header className="fixed px-2 top-0 z-40 w-full bg-gray-700 dark:bg-gray-800  flex items-center  shadow-md h-14">
-      <div className="flex w-full items-center text-gray-300 space-x-4 justify-end">
-        {/* Display the user's name */}
-        <span>{`Hello, ${userData?.name}`}</span>
+      <div className="flex w-full items-center text-gray-300 space-x-4">
+        <div className="flex-1">
+          <div className="hidden lg:block text-lg font-medium px-4">
+            Sales & Inventory Tracker
+          </div>
+        </div>
+        <div className="flex items-center text-gray-300 space-x-4">
+          {/* Display the user's name */}
+          <span>{`Hello, ${userData?.name}`}</span>
 
-        {/* Theme toggle (light/dark mode) */}
-        <ThemeToggle />
+          {/* Theme toggle (light/dark mode) */}
+          <ThemeToggle />
 
-        {/* Logout button */}
-        <form action="/auth/signout" method="post">
-          <Button
-            variant="outline"
-            className="bg-gray-700"
-            size="sm"
-            type="submit"
-          >
-            Sign out
-          </Button>
-        </form>
+          {/* Logout button */}
+          <form action="/auth/signout" method="post">
+            <Button
+              variant="outline"
+              className="bg-gray-700"
+              size="sm"
+              type="submit"
+            >
+              Sign out
+            </Button>
+          </form>
+        </div>
       </div>
     </header>
   )

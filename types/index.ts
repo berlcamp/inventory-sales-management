@@ -111,6 +111,7 @@ export type PurchaseOrderStatus =
   | 'draft'
   | 'approved'
   | 'completed'
+  | 'delivered'
   | 'received'
 export type PaymentStatus = 'paid' | 'partial' | 'unpaid'
 
@@ -190,6 +191,7 @@ export interface SalesOrderItem {
   total: number
   created_at: string
   sales_order: SalesOrder
+  product: Product
 }
 
 export interface SalesOrderPayment {

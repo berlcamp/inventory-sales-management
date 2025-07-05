@@ -1,7 +1,7 @@
 'use client'
 import { ConfirmationModal } from '@/components/ConfirmationModal'
 import { ProductLogsModal } from '@/components/ProductLogsModal'
-import { countAvailableStocks } from '@/lib/helpers'
+import { countAllStocks, countAvailableStocks } from '@/lib/helpers'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { deleteItem } from '@/store/listSlice'
@@ -162,7 +162,7 @@ export const List = ({}) => {
                     className="text-xs text-blue-800 cursor-pointer font-medium"
                     onClick={() => handleManageStocks(item)}
                   >
-                    Manage Prices
+                    Manage Stocks & Prices
                   </span>
                   <span>|</span>
                   <span
@@ -176,7 +176,13 @@ export const List = ({}) => {
               <td className="app__td">{item.category?.name}</td>
               <td className="app__td">
                 {item.stocks && (
-                  <span>{countAvailableStocks(item.stocks)}</span>
+                  <div>
+                    <span className="font-bold text-lg">
+                      {countAvailableStocks(item.stocks)}
+                    </span>{' '}
+                    <span>out of </span>
+                    <span>{countAllStocks(item.stocks)}</span>
+                  </div>
                 )}
               </td>
             </tr>

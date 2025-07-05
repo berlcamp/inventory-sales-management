@@ -92,11 +92,11 @@ export const List = ({}) => {
     // 1. Mark PO as completed
     const { error: updateError } = await supabase
       .from('purchase_orders')
-      .update({ status: 'received' })
+      .update({ status: 'delivered' })
       .eq('id', purchaseOrderId)
 
     if (updateError) {
-      toast.error('Failed to mark as received.')
+      toast.error('Failed to mark as delivered.')
       return
     }
 
@@ -121,12 +121,12 @@ export const List = ({}) => {
     }
 
     // 3. Notify and update Redux state
-    toast.success('Purchase Order received and stock updated!')
+    toast.success('Purchase Order delivered and stock updated!')
 
     dispatch(
       updateList({
         ...selectedItem,
-        status: 'received',
+        status: 'delivered',
         id: purchaseOrderId
       })
     )
@@ -217,7 +217,7 @@ export const List = ({}) => {
                     <MenuItems className="app__dropdown_items">
                       <div className="py-1">
                         {(item.status === 'approved' ||
-                          item.status === 'received') && (
+                          item.status === 'delivered') && (
                           <>
                             <MenuItem>
                               <div
@@ -360,7 +360,7 @@ export const List = ({}) => {
                                 className="app__dropdown_item"
                               >
                                 <CheckSquare className="w-4 h-4" />
-                                <span>Mark as Received</span>
+                                <span>Mark as Delivered</span>
                               </div>
                             </MenuItem>
                           </div>
@@ -371,8 +371,8 @@ export const List = ({}) => {
                     <Badge variant="orange">{item.status}</Badge>
                   ) : null}
 
-                  {/* Received badge (no dropdown) */}
-                  {item.status === 'received' && (
+                  {/* Delivered badge (no dropdown) */}
+                  {item.status === 'delivered' && (
                     <Badge variant="green">{item.status}</Badge>
                   )}
                 </div>
@@ -455,7 +455,7 @@ export const List = ({}) => {
         isOpen={modalMarkCompleteOpen}
         onClose={() => setModalMarkCompleteOpen(false)}
         onConfirm={handleMarkComplete}
-        message="By marking as received, the purchased products will automatically be added to product stocks. Are you sure you want to mark this as received?"
+        message="By marking as delivered, the purchased products will automatically be added to product stocks. Are you sure you want to mark this as delivered?"
       />
       <AddModal
         isOpen={modalAddOpen}
