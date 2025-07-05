@@ -23,7 +23,12 @@ import {
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { updateList } from '@/store/listSlice'
-import { addItem, addList, deleteItem } from '@/store/stocksSlice'
+import {
+  addItem,
+  addList,
+  deleteItem,
+  updateList as updateStocksList
+} from '@/store/stocksSlice'
 import { RootState, SalesOrder, SalesOrderPayment } from '@/types'
 import {
   Dialog,
@@ -116,11 +121,12 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
         dispatch(
           updateList({
             ...editData,
+            id: editData.id,
             payment_status:
               totalReceived + formdata.amount >= editData.total_amount
                 ? 'paid'
                 : 'partial',
-            id: editData.id
+            payments: [...list, formdata] // include the new payment in the list
           })
         )
 
@@ -145,6 +151,38 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
   const handleDeleteConfirmation = (item: ItemType) => {
     setSelectedItem(item)
     setIsModalOpen(true)
+  }
+
+  const handlePaymentReceived = async (item: ItemType) => {
+    const { error } = await supabase
+      .from('sales_order_payments')
+      .update({
+        type: 'Cheque'
+      })
+      .eq('id', item.id)
+
+    if (error) {
+      console.error('Error updating type:', error.message)
+    } else {
+      // Dispatch to Redux to update local state
+      dispatch(
+        updateStocksList({
+          ...item,
+          type: 'Cheque'
+        })
+      )
+      dispatch(
+        updateList({
+          ...editData,
+          id: editData.id,
+          payments: list.map((payment) =>
+            payment.id === item.id ? { ...payment, type: 'Cheque' } : payment
+          )
+        })
+      )
+
+      toast.success('Successfully saved!')
+    }
   }
 
   const handleDelete = async () => {
@@ -334,29 +372,30 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                         />
                       </div>
                     )}
-                    {form.watch('type') !== 'Cash' && (
-                      <div>
-                        <FormField
-                          control={form.control}
-                          name="bank"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="app__formlabel_standard">
-                                Bank Details
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  className="app__input_standard"
-                                  placeholder="Bank details"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    )}
+                    {form.watch('type') !== 'Cash' &&
+                      form.watch('type') !== '' && (
+                        <div>
+                          <FormField
+                            control={form.control}
+                            name="bank"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="app__formlabel_standard">
+                                  Bank Details
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    className="app__input_standard"
+                                    placeholder="Bank details"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
                   </div>
                   <div className="pt-6 mt-0 flex space-x-4">
                     <Button type="submit">
@@ -389,6 +428,7 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                   <th className="app__th">Date</th>
                   <th className="app__th">Amount</th>
                   <th className="app__th">Type</th>
+                  <th className="app__th"></th>
                 </tr>
               </thead>
               <tbody>
@@ -433,11 +473,22 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       {item.due_date && `(Due Date: ${item.due_date})`}{' '}
                       {item.bank && `(Bank: ${item.bank})`}
                     </td>
+                    <td className="app__td">
+                      {item.type === 'PDC' && (
+                        <Badge
+                          className="cursor-pointer"
+                          onClick={() => handlePaymentReceived(item)}
+                          variant="green"
+                        >
+                          Payment Received
+                        </Badge>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {list.length === 0 && (
                   <tr className="app__tr">
-                    <td className="app__td" colSpan={4}>
+                    <td className="app__td" colSpan={5}>
                       No payments received
                     </td>
                   </tr>

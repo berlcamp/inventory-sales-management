@@ -4,6 +4,7 @@ import { ConfirmationModal } from '@/components/ConfirmationModal'
 import { CustomerOrdersModal } from '@/components/CustomerOrdersModal'
 import { ProductLogsModal } from '@/components/ProductLogsModal'
 import { Badge } from '@/components/ui/badge'
+import { checkPDC } from '@/lib/helpers'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { deleteItem, updateList } from '@/store/listSlice'
@@ -30,7 +31,8 @@ import toast from 'react-hot-toast'
 import { useSelector } from 'react-redux'
 import { AddModal } from './AddModal'
 import { AddPaymentModal } from './AddPaymentModal'
-import PrintClaimSlip from './PrintClaimSlip'
+// import PrintClaimSlip from './PrintClaimSlip'
+import ClaimSlipModal from './ClaimSlipModal'
 import { ViewProductsModal } from './ViewProductsModal'
 
 // Always update this on other pages
@@ -49,6 +51,8 @@ export const List = ({}) => {
   const [modalMarkCompleteOpen, setModalMarkCompleteOpen] = useState(false)
   const [modalLogsOpen, setModalLogsOpen] = useState(false)
   const [modalCustomerOpen, setModalCustomerOpen] = useState(false)
+
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
@@ -131,10 +135,9 @@ export const List = ({}) => {
     setModalMarkCompleteOpen(false)
   }
 
-  const HandlePrintClaimSlip = (item: ItemType) => {
-    if (!user) return
-
-    PrintClaimSlip(item, user) // Pass the data you want to print
+  const openClaimSlip = async (item: ItemType) => {
+    setSelectedItem(item)
+    setIsPrintModalOpen(true)
   }
 
   const handleViewProducts = (item: ItemType) => {
@@ -171,8 +174,8 @@ export const List = ({}) => {
             <th className="app__th">S.O. Number</th>
             <th className="app__th">Customer</th>
             <th className="app__th">Total Amount</th>
-            <th className="app__th">Status</th>
-            <th className="app__th">Payment</th>
+            <th className="app__th">Order Status</th>
+            <th className="app__th">Payment Status</th>
           </tr>
         </thead>
         <tbody>
@@ -194,11 +197,11 @@ export const List = ({}) => {
                           <>
                             <MenuItem>
                               <div
-                                onClick={() => HandlePrintClaimSlip(item)}
+                                onClick={() => openClaimSlip(item)}
                                 className="app__dropdown_item"
                               >
                                 <PrinterIcon className="w-4 h-4" />
-                                <span>Print Claim Slip</span>
+                                <span>Print Slip</span>
                               </div>
                             </MenuItem>
                             <MenuItem>
@@ -247,6 +250,18 @@ export const List = ({}) => {
                     : 'Invalid date'}
                 </div>
                 <div className="mt-2 space-x-2">
+                  {(item.status === 'reserved' ||
+                    item.status === 'completed') && (
+                    <>
+                      <span
+                        className="text-xs text-blue-800 cursor-pointer font-bold"
+                        onClick={() => openClaimSlip(item)}
+                      >
+                        Print Slip
+                      </span>
+                      <span>|</span>
+                    </>
+                  )}
                   <span
                     className="text-xs text-blue-800 cursor-pointer font-bold"
                     onClick={() => handleViewProducts(item)}
@@ -383,6 +398,9 @@ export const List = ({}) => {
                       )}
                     </>
                   )}
+                  {item.payments && checkPDC(item.payments) && (
+                    <Badge variant="orange">With PDC</Badge>
+                  )}
                 </div>
               </td>
             </tr>
@@ -435,6 +453,13 @@ export const List = ({}) => {
           customerId={selectedItem.customer_id ?? 0}
           name={selectedItem.customer?.name ?? ''}
           onClose={() => setModalCustomerOpen(false)}
+        />
+      )}
+      {selectedItem && (
+        <ClaimSlipModal
+          isOpen={isPrintModalOpen}
+          onClose={() => setIsPrintModalOpen(false)}
+          editData={selectedItem}
         />
       )}
     </div>

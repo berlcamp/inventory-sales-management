@@ -90,6 +90,7 @@ export const List = ({}) => {
           <tr>
             <th className="app__th"></th>
             <th className="app__th">Name</th>
+            <th className="app__th">Unit</th>
             <th className="app__th">Category</th>
             <th className="app__th">Available Stocks</th>
           </tr>
@@ -149,7 +150,7 @@ export const List = ({}) => {
                 </Menu>
               </td>
               <td className="app__td">
-                <div>{item.name}</div>
+                <div className="font-medium">{item.name}</div>
                 <div className="mt-2 space-x-2">
                   <span
                     className="text-xs text-blue-800 cursor-pointer font-medium"
@@ -173,6 +174,7 @@ export const List = ({}) => {
                   </span>
                 </div>
               </td>
+              <td className="app__td">{item.unit}</td>
               <td className="app__td">{item.category?.name}</td>
               <td className="app__td">
                 {item.stocks && (

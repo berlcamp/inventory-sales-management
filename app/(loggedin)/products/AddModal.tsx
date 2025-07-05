@@ -41,6 +41,7 @@ import { z } from 'zod'
 type ItemType = Product
 type FormType = {
   name: string
+  unit: string
   category_id: number
 }
 const table = 'products'
@@ -54,6 +55,7 @@ interface ModalProps {
 
 const FormSchema = z.object({
   name: z.string().min(1, 'Product Name is required'),
+  unit: z.string().min(1, 'Unit is required'),
   category_id: z.coerce.number().min(1, 'Category is required')
 })
 
@@ -70,6 +72,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     resolver: zodResolver(FormSchema),
     defaultValues: {
       name: editData ? editData.name : '',
+      unit: editData ? editData.unit : '',
       category_id: editData ? editData.category_id : 0
     }
   })
@@ -82,6 +85,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     try {
       const newData = {
         name: data.name,
+        unit: data.unit,
         category_id: data.category_id
       }
 
@@ -142,6 +146,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   useEffect(() => {
     form.reset({
       name: editData?.name || '',
+      unit: editData?.unit || '',
       category_id: editData?.category_id || 0
     })
   }, [form, editData, isOpen])
@@ -201,6 +206,28 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                             <Input
                               className="app__input_standard"
                               placeholder="Product Name"
+                              type="text"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <FormField
+                      control={form.control}
+                      name="unit"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="app__formlabel_standard">
+                            Unit
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              className="app__input_standard"
+                              placeholder="Unit"
                               type="text"
                               {...field}
                             />

@@ -40,6 +40,7 @@ export interface Category {
 export interface Product {
   id: number
   name: string
+  unit: string
   sku?: string
   description?: string
   current_cost: number
