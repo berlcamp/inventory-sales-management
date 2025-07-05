@@ -140,7 +140,7 @@ const MainSidebar = () => {
                 <span className="font-semibold">Settings</span>
               </div>
             </li>
-            <li>
+            {/* <li>
               <Link
                 href="/settings"
                 className={`app__menu_link ${
@@ -151,7 +151,7 @@ const MainSidebar = () => {
                   Address Settings
                 </span>
               </Link>
-            </li>
+            </li> */}
             <li>
               <Link
                 href="/users"

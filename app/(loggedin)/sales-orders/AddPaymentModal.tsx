@@ -78,6 +78,7 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
   const list = useSelector((state: RootState) => state.stocksList.value)
+  const user = useSelector((state: RootState) => state.user.user)
 
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
@@ -114,6 +115,14 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
       if (error) {
         console.error('Error adding:', error)
       } else {
+        // Update logs
+        await supabase.from('product_change_logs').insert({
+          sales_order_id: editData.id,
+          user_id: user?.system_user_id,
+          user_name: user?.name,
+          message: `received payment (${formdata.type})`
+        })
+
         // Insert new item to Redux
         dispatch(addItem({ ...newData, id: data[0].id }))
 
@@ -480,7 +489,7 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                           onClick={() => handlePaymentReceived(item)}
                           variant="green"
                         >
-                          Payment Received
+                          Payment Completed
                         </Badge>
                       )}
                     </td>

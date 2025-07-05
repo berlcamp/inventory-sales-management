@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { Button } from '@/components/ui/button'
-import { SalesOrder } from '@/types'
+import { PurchaseOrder } from '@/types'
 import { Dialog, DialogPanel } from '@headlessui/react'
 import { format } from 'date-fns'
 import { useRef } from 'react'
@@ -8,10 +8,10 @@ import { useRef } from 'react'
 interface Props {
   isOpen: boolean
   onClose: () => void
-  editData: SalesOrder
+  editData: PurchaseOrder
 }
 
-const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
+const PrintModal = ({ isOpen, onClose, editData }: Props) => {
   const printRef = useRef<HTMLDivElement>(null)
 
   const handlePrint = () => {
@@ -46,14 +46,27 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
             <div className="text-center">
               <img src="/pgc.png" className="mx-auto w-[60%]" alt="PGC Logo" />
             </div>
-            <h1 className="text-xl font-bold text-center my-10">Order Slip</h1>
+            <h1 className="text-xl font-bold text-center my-10">
+              PURCHASE ORDER
+            </h1>
 
             <div className="grid grid-cols-2 gap-1">
-              <div>Customer: {editData.customer?.name}</div>
-              <div>S.O. No: {editData.so_number}</div>
-              <div>Address: {editData.customer?.address}</div>
               <div>
-                Date: {format(new Date(editData.date), 'MMMM dd, yyyy')}
+                Supplier:{' '}
+                <span className="font-bold">{editData.supplier?.name}</span>
+              </div>
+              <div>
+                P.O. No: <span className="font-bold">{editData.po_number}</span>
+              </div>
+              <div>
+                Address:{' '}
+                <span className="font-bold">{editData.supplier?.address}</span>
+              </div>
+              <div>
+                Date:{' '}
+                <span className="font-bold">
+                  {format(new Date(editData.date), 'MMMM dd, yyyy')}
+                </span>
               </div>
             </div>
 
@@ -69,6 +82,12 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
                   <th className="border border-black px-1 py-px text-center">
                     Item Description
                   </th>
+                  <th className="border border-black px-1 py-px text-center">
+                    Unit Price
+                  </th>
+                  <th className="border border-black px-1 py-px text-center">
+                    Amount
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -80,10 +99,22 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
                         {quantity}
                       </td>
                       <td className="border border-black px-1 py-px text-center">
-                        {item.product_stock?.product?.unit}
+                        {item?.product?.unit}
                       </td>
                       <td className="border border-black px-1 py-px text-center">
-                        {item.product_stock?.product?.name}
+                        {item.product?.name}
+                      </td>
+                      <td className="border border-black px-1 py-px text-center">
+                        {item.cost}
+                      </td>
+                      <td className="border border-black px-1 py-px text-center">
+                        {(item.cost * item.quantity)?.toLocaleString(
+                          undefined,
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          }
+                        )}
                       </td>
                     </tr>
                   )
@@ -98,22 +129,6 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
                   <td className="border border-black px-1 py-px text-center">
                     &nbsp;
                   </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="border border-black px-1 py-px text-center">
-                    &nbsp;
-                  </td>
-                  <td className="border border-black px-1 py-px text-center">
-                    &nbsp;
-                  </td>
-                  <td className="border border-black px-1 py-px text-center">
-                    &nbsp;
-                  </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="border border-black px-1 py-px text-center">
-                    &nbsp;
-                  </td>
                   <td className="border border-black px-1 py-px text-center">
                     &nbsp;
                   </td>
@@ -131,8 +146,54 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
                   <td className="border border-black px-1 py-px text-center">
                     &nbsp;
                   </td>
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
                 </tr>
                 <tr className="border-b">
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
+                  <td className="border border-black px-1 py-px text-center">
+                    &nbsp;
+                  </td>
                   <td className="border border-black px-1 py-px text-center">
                     &nbsp;
                   </td>
@@ -146,11 +207,32 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
               </tbody>
             </table>
 
-            <div className="mt-8 space-y-8">
-              <div>Ordered By:</div>
-              <div>
-                <div className="font-semibold">{editData.customer?.name}</div>
-                <div className="italic">Signature over Printed Name</div>
+            <div className="mt-8">
+              <div className="grid grid-cols-2 gap-1">
+                <div>Prepare By:</div>
+                <div>Reviewed By:</div>
+                <div>
+                  <div className="mt-8 font-semibold">
+                    Jenie Mae A. Aranzado
+                  </div>
+                </div>
+                <div>
+                  <div className="mt-8 font-semibold">Analyn B. Butalid</div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-10">
+              <div className="grid grid-cols-2 gap-1">
+                <div>Approved by:</div>
+                <div>Conformed By:</div>
+                <div>
+                  <div className="mt-8 font-semibold">MARIFE P. LUNGAY</div>
+                </div>
+                <div>
+                  <div className="mt-8">Signature: ____________________</div>
+                  <div className="">Supplier: _____________________</div>
+                  <div className="">Date: ________________________</div>
+                </div>
               </div>
             </div>
           </div>
@@ -171,4 +253,4 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
   )
 }
 
-export default ClaimSlipModal
+export default PrintModal

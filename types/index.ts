@@ -138,6 +138,7 @@ export interface PurchaseOrderItem {
   product_id: number
   product: Product
   quantity: number
+  total: number
   cost: number
   price: number
 }

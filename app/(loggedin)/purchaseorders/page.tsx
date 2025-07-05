@@ -29,7 +29,7 @@ export default function Page() {
       const query = supabase
         .from('purchase_orders')
         .select(
-          '*,supplier:supplier_id(*),order_items:purchase_order_items(*,product:product_id(*))',
+          '*,supplier:supplier_id(*),payments:purchase_payments(*),order_items:purchase_order_items(*,product:product_id(*))',
           { count: 'exact' }
         )
         .ilike('po_number', `%${filter}%`)

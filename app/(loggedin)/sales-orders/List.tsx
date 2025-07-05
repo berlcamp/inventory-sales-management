@@ -124,6 +124,14 @@ export const List = ({}) => {
 
     toast.success('Sales Order updated successfully!')
 
+    // Update logs
+    await supabase.from('product_change_logs').insert({
+      sales_order_id: selectedItem.id,
+      user_id: user?.system_user_id,
+      user_name: user?.name,
+      message: `updated status to Complete`
+    })
+
     // Update Redux state
     dispatch(
       updateList({
@@ -399,7 +407,7 @@ export const List = ({}) => {
                     </>
                   )}
                   {item.payments && checkPDC(item.payments) && (
-                    <Badge variant="orange">With PDC</Badge>
+                    <Badge variant="orange">PDC</Badge>
                   )}
                 </div>
               </td>

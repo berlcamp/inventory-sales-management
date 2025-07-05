@@ -23,7 +23,12 @@ import {
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { updateList } from '@/store/listSlice'
-import { addItem, addList, deleteItem } from '@/store/stocksSlice'
+import {
+  addItem,
+  addList,
+  deleteItem,
+  updateList as updateStocksList
+} from '@/store/stocksSlice'
 import { PurchaseOrder, PurchaseOrderPayment, RootState } from '@/types'
 import {
   Dialog,
@@ -116,11 +121,12 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
         dispatch(
           updateList({
             ...editData,
+            id: editData.id,
             payment_status:
               totalPayment + formdata.amount >= editData.total_amount
                 ? 'paid'
                 : 'partial',
-            id: editData.id
+            payments: [...list, formdata] // include the new payment in the list
           })
         )
 
@@ -136,6 +142,38 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
       console.error('Submission error:', err)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handlePaymentReceived = async (item: ItemType) => {
+    const { error } = await supabase
+      .from('purchase_payments')
+      .update({
+        type: 'Cheque'
+      })
+      .eq('id', item.id)
+
+    if (error) {
+      console.error('Error updating type:', error.message)
+    } else {
+      // Dispatch to Redux to update local state
+      dispatch(
+        updateStocksList({
+          ...item,
+          type: 'Cheque'
+        })
+      )
+      dispatch(
+        updateList({
+          ...editData,
+          id: editData.id,
+          payments: list.map((payment) =>
+            payment.id === item.id ? { ...payment, type: 'Cheque' } : payment
+          )
+        })
+      )
+
+      toast.success('Successfully saved!')
     }
   }
 
@@ -215,7 +253,7 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
       {/* Centered panel container */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPanel transition className="app__modal_dialog_panel_sm">
+        <DialogPanel transition className="app__modal_dialog_panel">
           {/* Sticky Header */}
           <div className="app__modal_dialog_title_container">
             <DialogTitle as="h3" className="text-base font-medium flex-1">
@@ -385,6 +423,7 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                   <th className="app__th">Date</th>
                   <th className="app__th">Amount</th>
                   <th className="app__th">Type</th>
+                  <th className="app__th"></th>
                 </tr>
               </thead>
               <tbody>
@@ -428,6 +467,17 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       {item.type}{' '}
                       {item.due_date && `(Due Date: ${item.due_date})`}{' '}
                       {item.bank && `(Bank: ${item.bank})`}
+                    </td>
+                    <td className="app__td">
+                      {item.type === 'PDC' && (
+                        <Badge
+                          className="cursor-pointer"
+                          onClick={() => handlePaymentReceived(item)}
+                          variant="green"
+                        >
+                          Payment Completed
+                        </Badge>
+                      )}
                     </td>
                   </tr>
                 ))}

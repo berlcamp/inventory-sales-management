@@ -3,6 +3,7 @@
 import { ConfirmationModal } from '@/components/ConfirmationModal'
 import { ProductLogsModal } from '@/components/ProductLogsModal'
 import { Badge } from '@/components/ui/badge'
+import { checkPDC } from '@/lib/helpers'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { deleteItem, updateList } from '@/store/listSlice'
@@ -29,7 +30,7 @@ import toast from 'react-hot-toast'
 import { useSelector } from 'react-redux'
 import { AddModal } from './AddModal'
 import { AddPaymentModal } from './AddPaymentModal'
-import generatePurchaseOrderPDF from './PrintPo'
+import PrintModal from './PrintModal'
 import { ViewProductsModal } from './ViewProductsModal'
 
 // Always update this on other pages
@@ -48,6 +49,7 @@ export const List = ({}) => {
   const [modalMarkCompleteOpen, setModalMarkCompleteOpen] = useState(false)
   const [modalMarkApproveOpen, setModalMarkApproveOpen] = useState(false)
   const [modalLogsOpen, setModalLogsOpen] = useState(false)
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
@@ -155,10 +157,9 @@ export const List = ({}) => {
     setModalMarkApproveOpen(false)
   }
 
-  const handlePrintPurchaseOrder = (item: ItemType) => {
-    if (!user) return
-
-    generatePurchaseOrderPDF(item, user) // Pass the data you want to print
+  const openPrint = async (item: ItemType) => {
+    setSelectedItem(item)
+    setIsPrintModalOpen(true)
   }
 
   // Delete Supplier
@@ -190,8 +191,8 @@ export const List = ({}) => {
             <th className="app__th">P.O. Number</th>
             <th className="app__th">Supplier</th>
             <th className="app__th">Total Amount</th>
-            <th className="app__th">Status</th>
-            <th className="app__th">Payment</th>
+            <th className="app__th">P.O. Status</th>
+            <th className="app__th">Payment Status</th>
           </tr>
         </thead>
         <tbody>
@@ -221,7 +222,7 @@ export const List = ({}) => {
                           <>
                             <MenuItem>
                               <div
-                                onClick={() => handlePrintPurchaseOrder(item)}
+                                onClick={() => openPrint(item)}
                                 className="app__dropdown_item"
                               >
                                 <PrinterIcon className="w-4 h-4" />
@@ -274,6 +275,18 @@ export const List = ({}) => {
                     : 'Invalid date'}
                 </div>
                 <div className="mt-2 space-x-2">
+                  {(item.status === 'approved' ||
+                    item.status === 'delivered') && (
+                    <>
+                      <span
+                        className="text-xs text-blue-800 cursor-pointer font-bold"
+                        onClick={() => openPrint(item)}
+                      >
+                        Print P.O.
+                      </span>
+                      <span>|</span>
+                    </>
+                  )}
                   <span
                     className="text-xs text-blue-800 cursor-pointer font-bold"
                     onClick={() => handleViewProducts(item)}
@@ -379,7 +392,7 @@ export const List = ({}) => {
               </td>
 
               <td className="app__td">
-                {item.status === 'completed' && (
+                {item.status !== 'draft' && (
                   <div className="flex space-x-1">
                     {user?.user_metadata?.sffo_role === 'admin' ? (
                       <Menu
@@ -397,7 +410,11 @@ export const List = ({}) => {
                             }
                             className="flex items-center space-x-1 cursor-pointer"
                           >
-                            <span>{item.payment_status}</span>
+                            <span>
+                              {item.payment_status === 'partial'
+                                ? 'Partially Paid'
+                                : item.payment_status}
+                            </span>
                             <ChevronDown className="h-4 w-4" />
                           </Badge>
                         </Menu.Button>
@@ -430,6 +447,9 @@ export const List = ({}) => {
                       >
                         {item.payment_status}
                       </Badge>
+                    )}
+                    {item.payments && checkPDC(item.payments) && (
+                      <Badge variant="orange">PDC</Badge>
                     )}
                   </div>
                 )}
@@ -481,6 +501,14 @@ export const List = ({}) => {
           isOpen={modalLogsOpen}
           POId={selectedItem.id}
           onClose={() => setModalLogsOpen(false)}
+        />
+      )}
+
+      {selectedItem && (
+        <PrintModal
+          isOpen={isPrintModalOpen}
+          onClose={() => setIsPrintModalOpen(false)}
+          editData={selectedItem}
         />
       )}
     </div>
