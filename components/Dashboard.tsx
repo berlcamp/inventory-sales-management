@@ -23,6 +23,7 @@ interface LowStockProductType {
 }
 
 interface DashboardMetrics {
+  TodaySales: number
   totalSales: number
   totalSalesOrders: number
   totalPurchases: number
@@ -37,33 +38,21 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      // const today = new Date()
-      // const firstDay = new Date(
-      //   today.getFullYear(),
-      //   today.getMonth(),
-      //   1
-      // ).toISOString()
-      // const lastDay = new Date(
-      //   today.getFullYear(),
-      //   today.getMonth() + 1,
-      //   0
-      // ).toISOString()
+      const today = new Date().toISOString().split('T')[0]
 
-      const [salesRes, purchasesRes, lowStockRes, bestSellersRes] =
+      const [todaySales, salesRes, purchasesRes, lowStockRes, bestSellersRes] =
         await Promise.all([
           supabase
             .from('sales_orders')
             .select('total_amount')
-            .eq('status', 'completed'),
-          // .gte('date', firstDay)
-          // .lte('date', lastDay),
+            .eq('date', today),
+
+          supabase.from('sales_orders').select('total_amount'),
 
           supabase
             .from('purchase_orders')
             .select('total_amount')
-            .eq('status', 'completed'),
-          // .gte('date', firstDay)
-          // .lte('date', lastDay),
+            .neq('status', 'draft'),
 
           supabase
             .from('products')
@@ -77,6 +66,8 @@ export default function AdminDashboard() {
             )
         ])
       console.log('salesRes.data', salesRes.data)
+      const TodaySales =
+        todaySales.data?.reduce((sum, s) => sum + s.total_amount, 0) || 0
       const totalSales =
         salesRes.data?.reduce((sum, s) => sum + s.total_amount, 0) || 0
       const totalSalesOrders = salesRes.data?.length || 0
@@ -109,6 +100,7 @@ export default function AdminDashboard() {
         .slice(0, 10)
 
       setMetrics({
+        TodaySales,
         totalSales,
         totalSalesOrders,
         totalPurchases,
@@ -134,7 +126,22 @@ export default function AdminDashboard() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 p-4">
-      <Card>
+      <Card className="md:col-span-4 bg-gradient-to-r from-green-600 via-blue-400 to-white text-white shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-white">Today&apos;s Sales</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-extrabold tracking-tight">
+            ₱{' '}
+            {metrics.TodaySales.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-blue-100">
         <CardHeader>
           <CardTitle>Total Sales</CardTitle>
         </CardHeader>
@@ -149,7 +156,7 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-blue-100">
         <CardHeader>
           <CardTitle>Sales Orders</CardTitle>
         </CardHeader>
@@ -158,7 +165,7 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-blue-100">
         <CardHeader>
           <CardTitle>Total Purchases</CardTitle>
         </CardHeader>
@@ -173,7 +180,7 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-blue-100">
         <CardHeader>
           <CardTitle>Outstanding Payments</CardTitle>
         </CardHeader>
