@@ -2,12 +2,13 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { countAllStocks } from '@/lib/helpers'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { addList } from '@/store/stocksSlice'
-import { Product } from '@/types'
+import { Product, ProductStock } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { StocksList } from './StocksList'
 
 // Always update this on other pages
@@ -22,6 +23,7 @@ interface ModalProps {
 export const StocksModal = ({ editData, onClose, isOpen }: ModalProps) => {
   //
   const dispatch = useAppDispatch()
+  const [stocks, setStocks] = useState<ProductStock[] | null>([])
 
   // Fetch on page load
   useEffect(() => {
@@ -34,6 +36,7 @@ export const StocksModal = ({ editData, onClose, isOpen }: ModalProps) => {
       if (error) {
         console.error(error)
       } else {
+        setStocks(data)
         // Update the list of suppliers in Redux store
         dispatch(addList(data))
       }
@@ -69,9 +72,17 @@ export const StocksModal = ({ editData, onClose, isOpen }: ModalProps) => {
           </div>
           {/* Scrollable Form Content */}
           <div className="app__modal_dialog_content">
-            <div className="mt-4 text-right font-semibold">
+            <div className="mt-4 text-right">
               Total Available Stocks: &nbsp;
-              {editData.current_quantity}
+              <span className="font-bold">
+                {editData.current_quantity}
+                {stocks && (
+                  <span>
+                    {' '}
+                    out of <span>{countAllStocks(stocks)}</span>
+                  </span>
+                )}
+              </span>
             </div>
             {/* Pass Redux data to List Table */}
             <StocksList />

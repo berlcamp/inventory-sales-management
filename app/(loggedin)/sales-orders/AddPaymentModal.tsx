@@ -42,7 +42,7 @@ import {
 } from '@headlessui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
-import { ChevronDown, TrashIcon } from 'lucide-react'
+import { CheckIcon, ChevronDown, TrashIcon } from 'lucide-react'
 import { Fragment, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -414,8 +414,13 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                 </form>
               </Form>
             )}
+            <div className="text-xs font-light italic">
+              Payment Status automally change to{' '}
+              <span className="font-bold">&quot;PAID&quot;</span> once the
+              Remaining Amount is paid.
+            </div>
             <hr />
-            <div className="mt-4 text-center">Payments Received</div>
+
             <div className="flex space-x-4 border-t pt-2">
               <div>
                 <span className="text-xs">Sales Order Total</span>{' '}
@@ -435,9 +440,9 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                 <tr>
                   <th className="app__th"></th>
                   <th className="app__th">Date</th>
-                  <th className="app__th">Amount</th>
+                  <th className="app__th">Amount Received</th>
                   <th className="app__th">Type</th>
-                  <th className="app__th"></th>
+                  {/* <th className="app__th"></th> */}
                 </tr>
               </thead>
               <tbody>
@@ -480,16 +485,14 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                     <td className="app__td">
                       {item.type}{' '}
                       {item.due_date && `(Due Date: ${item.due_date})`}{' '}
-                      {item.bank && `(Bank: ${item.bank})`}
-                    </td>
-                    <td className="app__td">
+                      {item.bank && `(Bank: ${item.bank})`}{' '}
                       {item.type === 'PDC' && (
                         <Badge
                           className="cursor-pointer"
                           onClick={() => handlePaymentReceived(item)}
-                          variant="green"
+                          variant="blue"
                         >
-                          Payment Completed
+                          <CheckIcon /> Mark as Payed
                         </Badge>
                       )}
                     </td>

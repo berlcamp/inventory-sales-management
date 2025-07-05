@@ -21,7 +21,11 @@ export default function ThemeToggle() {
   }
 
   return (
-    <button onClick={toggleTheme} aria-label="Toggle Theme">
+    <button
+      className="cursor-pointer"
+      onClick={toggleTheme}
+      aria-label="Toggle Theme"
+    >
       {theme === 'light' ? '🌙' : '☀️'}
     </button>
   )
