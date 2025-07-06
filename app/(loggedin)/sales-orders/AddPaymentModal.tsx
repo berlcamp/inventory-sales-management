@@ -180,13 +180,20 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
           type: 'Cheque'
         })
       )
+
+      const totalReceived = (list as ItemType[]).reduce(
+        (total, item) => total + item.amount,
+        0
+      )
+      const remainingAmount = editData.total_amount - totalReceived
+
+      // Update main list payment status
       dispatch(
         updateList({
           ...editData,
           id: editData.id,
-          payments: list.map((payment) =>
-            payment.id === item.id ? { ...payment, type: 'Cheque' } : payment
-          )
+          payment_status:
+            remainingAmount >= editData.total_amount ? 'paid' : 'partial'
         })
       )
 
