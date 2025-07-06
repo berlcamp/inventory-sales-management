@@ -229,7 +229,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           so_number: formdata.so_number,
           po_number: formdata.po_number ?? '',
           total_amount: total,
-          status: 'draft',
+          status: 'reserved',
           payment_status: 'unpaid'
         }
 
@@ -282,7 +282,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
               sales_order_id: newPOId,
               user_id: user?.system_user_id,
               user_name: user?.name,
-              message: `added this sales order`
+              message: `created this sales order`
             })
 
             // Update Redux with the new data
@@ -375,7 +375,9 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     const fetchData = async () => {
       const { data } = await supabase
         .from('product_stocks')
-        .select('*,product:product_id(*)')
+        .select(
+          '*,product:product_id(*),purchase_order:purchase_order_id(po_number)'
+        )
         .order('purchase_date', { ascending: true })
 
       const { data: customersData } = await supabase
@@ -743,11 +745,14 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                                                   >
                                                     <div className="font-medium truncate max-w-[65%]">
                                                       {s.product?.name}
-                                                      {s.product?.sku && (
-                                                        <span className="text-xs text-muted-foreground ml-1">
-                                                          - {s.product.sku}
-                                                        </span>
-                                                      )}
+                                                      <span className="text-xs text-muted-foreground ml-1">
+                                                        (
+                                                        {
+                                                          s.purchase_order
+                                                            ?.po_number
+                                                        }
+                                                        )
+                                                      </span>
                                                     </div>
                                                     <Check
                                                       className={cn(

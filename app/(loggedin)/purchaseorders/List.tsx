@@ -20,6 +20,7 @@ import {
   CheckSquare,
   ChevronDown,
   EyeIcon,
+  ListChecks,
   PencilIcon,
   PhilippinePeso,
   PrinterIcon,
@@ -30,6 +31,7 @@ import toast from 'react-hot-toast'
 import { useSelector } from 'react-redux'
 import { AddModal } from './AddModal'
 import { AddPaymentModal } from './AddPaymentModal'
+import { PartialDeliverModal } from './PartialDeliverModal'
 import PrintModal from './PrintModal'
 import { ViewProductsModal } from './ViewProductsModal'
 
@@ -47,6 +49,7 @@ export const List = ({}) => {
   const [modalPaymentOpen, setModalPaymentOpen] = useState(false)
   const [modalViewProductsOpen, setModalViewProductsOpen] = useState(false)
   const [modalMarkCompleteOpen, setModalMarkCompleteOpen] = useState(false)
+  const [modalPartialDeliverOpen, setModalPartialDeliverOpen] = useState(false)
   const [modalMarkApproveOpen, setModalMarkApproveOpen] = useState(false)
   const [modalLogsOpen, setModalLogsOpen] = useState(false)
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
@@ -80,6 +83,10 @@ export const List = ({}) => {
   const handleMarkCompleteConfirmation = (item: ItemType) => {
     setSelectedItem(item)
     setModalMarkCompleteOpen(true)
+  }
+  const handlePartiallyDelivered = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalPartialDeliverOpen(true)
   }
   const handleMarkApproveConfirmation = (item: ItemType) => {
     setSelectedItem(item)
@@ -350,7 +357,8 @@ export const List = ({}) => {
                   ) : null}
 
                   {/* Badge + Dropdown for APPROVED */}
-                  {item.status === 'approved' &&
+                  {(item.status === 'approved' ||
+                    item.status === 'partially delivered') &&
                   user?.user_metadata?.sffo_role === 'admin' ? (
                     <Menu as="div" className="relative inline-block text-left">
                       <Menu.Button as="div">
@@ -373,7 +381,16 @@ export const List = ({}) => {
                                 className="app__dropdown_item"
                               >
                                 <CheckSquare className="w-4 h-4" />
-                                <span>Mark as Delivered</span>
+                                <span>Mark all as Delivered</span>
+                              </div>
+                            </MenuItem>
+                            <MenuItem>
+                              <div
+                                onClick={() => handlePartiallyDelivered(item)}
+                                className="app__dropdown_item"
+                              >
+                                <ListChecks className="w-4 h-4" />
+                                <span>Received Partial Delivery</span>
                               </div>
                             </MenuItem>
                           </div>
@@ -415,6 +432,7 @@ export const List = ({}) => {
                                 ? 'Partially Paid'
                                 : item.payment_status}
                             </span>
+
                             <ChevronDown className="h-4 w-4" />
                           </Badge>
                         </Menu.Button>
@@ -494,6 +512,13 @@ export const List = ({}) => {
           isOpen={modalViewProductsOpen}
           editData={selectedItem}
           onClose={() => setModalViewProductsOpen(false)}
+        />
+      )}
+      {selectedItem && modalPartialDeliverOpen && (
+        <PartialDeliverModal
+          isOpen={modalPartialDeliverOpen}
+          editData={selectedItem}
+          onClose={() => setModalPartialDeliverOpen(false)}
         />
       )}
       {selectedItem && (

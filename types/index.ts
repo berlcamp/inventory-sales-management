@@ -114,7 +114,8 @@ export type PurchaseOrderStatus =
   | 'completed'
   | 'delivered'
   | 'received'
-export type PaymentStatus = 'paid' | 'partial' | 'unpaid'
+  | 'partially delivered'
+export type PaymentStatus = 'paid' | 'partial' | 'unpaid' | 'draft' | 'reserved'
 
 export interface PurchaseOrder {
   id: number

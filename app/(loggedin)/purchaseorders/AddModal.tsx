@@ -565,9 +565,9 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                     {fields.map((item, index) => (
                       <div
                         key={item.id}
-                        className="grid grid-cols-6 space-y-2 gap-2 items-center"
+                        className="grid grid-cols-8 space-y-2 gap-2 items-center"
                       >
-                        <div>
+                        <div className="col-span-3">
                           <FormField
                             control={form.control}
                             name={`products.${index}.product_id`}
@@ -595,8 +595,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                                         className={cn(
                                           'w-full justify-between hover:bg-white',
                                           !field.value &&
-                                            'text-muted-foreground',
-                                          'max-w-40' // Add max width to the button
+                                            'text-muted-foreground'
                                         )}
                                       >
                                         <span className="truncate">
@@ -614,7 +613,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                                       </Button>
                                     </FormControl>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-full p-0">
+                                  <PopoverContent className="w-[700px] p-0">
                                     <Command>
                                       <CommandInput placeholder="Search product..." />
                                       <CommandList>

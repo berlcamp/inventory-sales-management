@@ -1,0 +1,175 @@
+// components/AddItemTypeModal.tsx
+'use client'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { supabase } from '@/lib/supabase/client'
+import { updateList } from '@/store/listSlice'
+import { PurchaseOrder } from '@/types'
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+import { useState } from 'react'
+import { useDispatch } from 'react-redux'
+
+interface ModalProps {
+  isOpen: boolean
+  onClose: () => void
+  editData: PurchaseOrder
+}
+
+export const PartialDeliverModal = ({
+  isOpen,
+  onClose,
+  editData
+}: ModalProps) => {
+  //
+  const [partialQuantities, setPartialQuantities] = useState(() =>
+    editData.order_items.map((item) => ({
+      quantity: item.quantity // default full quantity
+    }))
+  )
+  const dispatch = useDispatch()
+
+  const handleQuantityChange = (index: number, value: number) => {
+    setPartialQuantities((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              quantity: Math.min(value, editData.order_items[i].quantity)
+            }
+          : item
+      )
+    )
+  }
+
+  const handlePartialDelivery = async () => {
+    const deliveredItems = editData.order_items
+      .map((item, index) => ({
+        product_id: item.product_id,
+        cost: item.cost,
+        price: item.price,
+        quantity: partialQuantities[index].quantity,
+        purchase_order_id: editData.id
+      }))
+      .filter((item) => item.quantity > 0)
+
+    // Insert stocks
+    const stockEntries = deliveredItems.map((item) => ({
+      product_id: item.product_id,
+      cost: item.cost,
+      selling_price: item.price,
+      quantity: item.quantity,
+      remaining_quantity: item.quantity,
+      purchase_date: new Date().toISOString().split('T')[0],
+      purchase_order_id: item.purchase_order_id
+    }))
+
+    const { error: stockError } = await supabase
+      .from('product_stocks')
+      .insert(stockEntries)
+
+    if (stockError) {
+      console.error('Stock insert failed', stockError)
+      return
+    }
+
+    // Update purchase_order_items
+    const updatedOrderItems = editData.order_items.map((item, index) => ({
+      ...item,
+      quantity: item.quantity - partialQuantities[index].quantity
+    }))
+
+    for (const item of updatedOrderItems) {
+      await supabase
+        .from('purchase_order_items')
+        .update({ quantity: item.quantity })
+        .eq('id', item.id)
+    }
+
+    const hasRemaining = updatedOrderItems.some((item) => item.quantity > 0)
+
+    // Update purchase_order status
+    await supabase
+      .from('purchase_orders')
+      .update({ status: hasRemaining ? 'partially delivered' : 'completed' })
+      .eq('id', editData.id)
+
+    // 🔁 Update Redux store
+    dispatch(
+      updateList({
+        ...editData,
+        status: hasRemaining ? 'partially delivered' : 'completed',
+        order_items: updatedOrderItems
+      })
+    )
+
+    onClose()
+  }
+
+  return (
+    <Dialog
+      open={isOpen}
+      as="div"
+      className="relative z-50 focus:outline-none"
+      onClose={() => {}}
+    >
+      {/* Background overlay */}
+      <div
+        className="fixed inset-0 bg-gray-600 opacity-80"
+        aria-hidden="true"
+      />
+
+      {/* Centered panel container */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <DialogPanel transition className="app__modal_dialog_panel_sm">
+          {/* Sticky Header */}
+          <div className="app__modal_dialog_title_container">
+            <DialogTitle as="h3" className="text-base font-medium flex-1">
+              Partially Delivered Items
+            </DialogTitle>
+            <Button type="button" onClick={onClose} variant="outline">
+              Close
+            </Button>
+          </div>
+          {/* Scrollable Form Content */}
+          <div className="app__modal_dialog_content">
+            <table className="app__table mb-10">
+              <thead className="app__thead">
+                <tr>
+                  <th className="app__th">Product</th>
+                  <th className="app__th">Quantity Received</th>
+                </tr>
+              </thead>
+              <tbody>
+                {editData.order_items.map((item, index) => (
+                  <tr key={index} className="app__tr">
+                    <td className="app__td font-medium">
+                      {item.product?.name}
+                    </td>
+                    <td className="app__td">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={item.quantity}
+                        value={partialQuantities[index].quantity}
+                        onChange={(e) =>
+                          handleQuantityChange(index, Number(e.target.value))
+                        }
+                        className="w-20 bg-white border rounded px-2 py-1"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-6 flex justify-end">
+              <Button onClick={handlePartialDelivery}>
+                Deliver Selected Quantities
+              </Button>
+            </div>
+          </div>
+        </DialogPanel>
+      </div>
+    </Dialog>
+  )
+}
