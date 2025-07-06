@@ -29,7 +29,7 @@ export default function Page() {
       setLoading(true)
       const { data, count, error } = await supabase
         .from('categories')
-        .select('*', { count: 'exact' })
+        .select('*,products(*)', { count: 'exact' })
         .ilike('name', `%${filter}%`)
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
         .order('id', { ascending: false })

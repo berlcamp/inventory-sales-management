@@ -36,7 +36,8 @@ export default function Page() {
         })
         .ilike('name', `%${filter}%`)
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
-        .order('id', { ascending: false })
+        .order('category_id', { ascending: false })
+        .order('name', { ascending: false })
 
       if (filterCategory !== '') {
         query = query.eq('category_id', filterCategory)

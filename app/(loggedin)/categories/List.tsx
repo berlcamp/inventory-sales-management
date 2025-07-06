@@ -12,11 +12,12 @@ import {
   MenuItems,
   Transition
 } from '@headlessui/react'
-import { ChevronDown, PencilIcon, TrashIcon } from 'lucide-react'
+import { ChevronDown, EyeIcon, PencilIcon, TrashIcon } from 'lucide-react'
 import { Fragment, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useSelector } from 'react-redux'
 import { AddModal } from './AddModal'
+import { ViewProductsModal } from './ViewProductsModal'
 
 // Always update this on other pages
 type ItemType = Category
@@ -28,6 +29,7 @@ export const List = ({}) => {
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalAddOpen, setModalAddOpen] = useState(false)
+  const [modalViewProductsOpen, setModalViewProductsOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
@@ -35,6 +37,11 @@ export const List = ({}) => {
   const handleDeleteConfirmation = (item: ItemType) => {
     setSelectedItem(item)
     setIsModalOpen(true)
+  }
+
+  const handleViewProducts = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalViewProductsOpen(true)
   }
 
   const handleEdit = (item: ItemType) => {
@@ -104,6 +111,15 @@ export const List = ({}) => {
                         </MenuItem>
                         <MenuItem>
                           <div
+                            onClick={() => handleViewProducts(item)}
+                            className="app__dropdown_item"
+                          >
+                            <EyeIcon className="w-4 h-4" />
+                            <span>View Products</span>
+                          </div>
+                        </MenuItem>
+                        <MenuItem>
+                          <div
                             onClick={() => handleDeleteConfirmation(item)}
                             className="app__dropdown_item"
                           >
@@ -116,7 +132,17 @@ export const List = ({}) => {
                   </Transition>
                 </Menu>
               </td>
-              <td className="app__td">{item.name}</td>
+              <td className="app__td">
+                <div className="font-medium">{item.name}</div>
+                <div className="mt-2 space-x-2">
+                  <span
+                    className="text-xs text-blue-800 cursor-pointer font-medium"
+                    onClick={() => handleViewProducts(item)}
+                  >
+                    View Products
+                  </span>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -128,6 +154,13 @@ export const List = ({}) => {
         onConfirm={handleDelete}
         message="Are you sure you want to delete this?"
       />
+      {selectedItem && modalViewProductsOpen && (
+        <ViewProductsModal
+          isOpen={modalViewProductsOpen}
+          editData={selectedItem}
+          onClose={() => setModalViewProductsOpen(false)}
+        />
+      )}
       <AddModal
         isOpen={modalAddOpen}
         editData={selectedItem}
