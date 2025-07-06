@@ -46,7 +46,9 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
             <div className="text-center">
               <img src="/pgc.png" className="mx-auto w-[60%]" alt="PGC Logo" />
             </div>
-            <h1 className="text-xl font-bold text-center my-10">Order Slip</h1>
+            <h1 className="text-xl font-bold text-center my-10">
+              Withdrawal Slip
+            </h1>
 
             <div className="grid grid-cols-2 gap-1">
               <div>Customer: {editData.customer?.name}</div>

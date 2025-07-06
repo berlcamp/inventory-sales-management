@@ -266,7 +266,7 @@ export const List = ({}) => {
                         className="text-xs text-blue-800 cursor-pointer font-bold"
                         onClick={() => openClaimSlip(item)}
                       >
-                        Print Slip
+                        Print Withdrawal Slip
                       </span>
                       <span>|</span>
                     </>
