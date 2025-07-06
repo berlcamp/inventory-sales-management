@@ -25,6 +25,7 @@ import {
 import LoadingSkeleton from './LoadingSkeleton'
 import Php from './Php'
 import { Button } from './ui/button'
+import { Input } from './ui/input'
 
 interface LowStockProductType {
   name: string
@@ -56,6 +57,9 @@ export default function AdminDashboard() {
 
   const [salesData, setSalesData] = useState<WeeklySales[]>([])
 
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+
   useEffect(() => {
     const fetchMetrics = async () => {
       const today = new Date().toISOString().split('T')[0]
@@ -76,8 +80,8 @@ export default function AdminDashboard() {
         supabase.from('sales_orders').select('total_amount').eq('date', today),
         supabase
           .from('sales_orders')
-          .select('created_at, total_amount')
-          .gte('created_at', subMonths(new Date(), 2).toISOString()),
+          .select('date, total_amount')
+          .gte('date', subMonths(new Date(), 5).toISOString()),
 
         supabase.from('sales_orders').select('total_amount'),
 
@@ -101,9 +105,10 @@ export default function AdminDashboard() {
       // Sales charts
       const grouped: Record<string, number> = {}
 
+      console.log('salesChartResponse.data', salesChartResponse.data)
       if (salesChartResponse.data) {
         for (const row of salesChartResponse.data ?? []) {
-          const createdAt = parseISO(row.created_at)
+          const createdAt = parseISO(row.date)
           const weekStart = format(
             startOfWeek(createdAt, { weekStartsOn: 1 }),
             'yyyy-MM-dd'
@@ -202,6 +207,35 @@ export default function AdminDashboard() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 p-4">
+      {/* Date Filters */}
+      <div className="md:col-span-4 flex flex-wrap gap-4 items-center justify-start mb-2 px-2">
+        <div className="flex items-center gap-2">
+          <label className="font-semibold text-sm text-gray-700 text-nowrap">
+            From:
+          </label>
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="font-semibold text-sm text-gray-700 text-nowrap">
+            To:
+          </label>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          />
+        </div>
+        {/* Apply Button */}
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium">
+          Apply Date Filter
+        </Button>
+      </div>
       <Card className="md:col-span-4 bg-gradient-to-r from-green-600 via-blue-400 to-white text-white shadow-lg">
         <CardHeader>
           <CardTitle>Today&apos;s Sales</CardTitle>
