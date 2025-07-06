@@ -2,6 +2,7 @@
 'use client'
 
 import { ConfirmationModal } from '@/components/ConfirmationModal'
+import Php from '@/components/Php'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -430,16 +431,33 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
             <div className="flex space-x-4 border-t pt-2">
               <div>
-                <span className="text-xs">Sales Order Total</span>{' '}
-                <Badge>{editData.total_amount.toFixed(2)}</Badge>
+                <span className="text-xs">Sales Order Total:</span>{' '}
+                <span className="font-bold">
+                  <Php />{' '}
+                  {editData.total_amount?.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </span>
               </div>
               <div>
-                <span className="text-xs">Total Payments Received</span>{' '}
-                <Badge>{totalReceived.toFixed(2)}</Badge>
+                <span className="text-xs">Total Payments Received:</span>{' '}
+                <span className="font-bold">
+                  <Php />{' '}
+                  {totalReceived?.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </span>
               </div>
               <div>
-                <span className="text-xs">Remaining Amount</span>{' '}
-                <Badge>{remainingAmount.toFixed(2)}</Badge>
+                <span className="text-xs">Remaining Amount:</span> <Php />{' '}
+                <span className="font-bold">
+                  {remainingAmount?.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </span>
               </div>
             </div>
             <table className="app__table mb-10">

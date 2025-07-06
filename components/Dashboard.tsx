@@ -305,11 +305,31 @@ export default function AdminDashboard() {
             <Card className="md:col-span-2 bg-gradient-to-r from-green-600 via-blue-400 to-blue-300 text-white shadow-lg">
               <CardHeader>
                 <CardTitle>Total Sales</CardTitle>
+                <CardDescription className="text-gray-200">
+                  Based on selected date
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-extrabold tracking-tight">
                   <Php />{' '}
                   {metrics.TodaySales.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="md:col-span-2 bg-gradient-to-r from-green-600 via-blue-400 to-blue-300 text-white shadow-lg">
+              <CardHeader>
+                <CardTitle>Entire Sales</CardTitle>
+                <CardDescription className="text-gray-200">
+                  Overall Sales
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-extrabold tracking-tight">
+                  <Php />{' '}
+                  {metrics.totalSales.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                   })}

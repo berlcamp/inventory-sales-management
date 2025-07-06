@@ -23,7 +23,6 @@ import {
   EyeIcon,
   PencilIcon,
   PhilippinePeso,
-  PrinterIcon,
   TrashIcon
 } from 'lucide-react'
 import { Fragment, useState } from 'react'
@@ -35,6 +34,7 @@ import { AddPaymentModal } from './AddPaymentModal'
 import Php from '@/components/Php'
 import ClaimSlipModal from './ClaimSlipModal'
 import { ViewProductsModal } from './ViewProductsModal'
+import WithrawalSlipModal from './WithrawalSlipModal'
 
 // Always update this on other pages
 type ItemType = SalesOrder
@@ -54,6 +54,7 @@ export const List = ({}) => {
   const [modalCustomerOpen, setModalCustomerOpen] = useState(false)
 
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
+  const [isPrintWSModalOpen, setIsPrintWSModalOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
@@ -148,6 +149,10 @@ export const List = ({}) => {
     setSelectedItem(item)
     setIsPrintModalOpen(true)
   }
+  const openWithrawalSlip = async (item: ItemType) => {
+    setSelectedItem(item)
+    setIsPrintWSModalOpen(true)
+  }
 
   const handleViewProducts = (item: ItemType) => {
     setSelectedItem(item)
@@ -206,15 +211,6 @@ export const List = ({}) => {
                           <>
                             <MenuItem>
                               <div
-                                onClick={() => openClaimSlip(item)}
-                                className="app__dropdown_item"
-                              >
-                                <PrinterIcon className="w-4 h-4" />
-                                <span>Print Slip</span>
-                              </div>
-                            </MenuItem>
-                            <MenuItem>
-                              <div
                                 onClick={() => handleViewProducts(item)}
                                 className="app__dropdown_item"
                               >
@@ -266,7 +262,14 @@ export const List = ({}) => {
                         className="text-xs text-blue-800 cursor-pointer font-bold"
                         onClick={() => openClaimSlip(item)}
                       >
-                        Print Withdrawal Slip
+                        Order Slip
+                      </span>
+                      <span>|</span>
+                      <span
+                        className="text-xs text-blue-800 cursor-pointer font-bold"
+                        onClick={() => openWithrawalSlip(item)}
+                      >
+                        Withdrawal Slip
                       </span>
                       <span>|</span>
                     </>
@@ -275,14 +278,14 @@ export const List = ({}) => {
                     className="text-xs text-blue-800 cursor-pointer font-bold"
                     onClick={() => handleViewProducts(item)}
                   >
-                    View Products
+                    Products
                   </span>
                   <span>|</span>
                   <span
                     className="text-xs text-blue-800 cursor-pointer font-medium"
                     onClick={() => handleLogs(item)}
                   >
-                    View Logs
+                    Logs
                   </span>
                 </div>
               </td>
@@ -468,6 +471,13 @@ export const List = ({}) => {
         <ClaimSlipModal
           isOpen={isPrintModalOpen}
           onClose={() => setIsPrintModalOpen(false)}
+          editData={selectedItem}
+        />
+      )}
+      {selectedItem && (
+        <WithrawalSlipModal
+          isOpen={isPrintWSModalOpen}
+          onClose={() => setIsPrintWSModalOpen(false)}
           editData={selectedItem}
         />
       )}

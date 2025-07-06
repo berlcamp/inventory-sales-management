@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import Php from '@/components/Php'
 import { Button } from '@/components/ui/button'
 import { SalesOrder } from '@/types'
 import { Dialog, DialogPanel } from '@headlessui/react'
@@ -11,7 +12,7 @@ interface Props {
   editData: SalesOrder
 }
 
-const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
+const WithrawalSlipModal = ({ isOpen, onClose, editData }: Props) => {
   const printRef = useRef<HTMLDivElement>(null)
 
   const handlePrint = () => {
@@ -48,10 +49,8 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
             </div>
             <h1 className="text-xl font-bold text-center my-10">Order Slip</h1>
 
-            <div className="grid grid-cols-2 gap-1">
-              <div>Customer: {editData.customer?.name}</div>
-              <div>S.O. No: {editData.so_number}</div>
-              <div>Address: {editData.customer?.address}</div>
+            <div className="grid grid-cols-3 gap-1">
+              <div className="col-span-2">W.S No: {editData.so_number}</div>
               <div>
                 Date: {format(new Date(editData.date), 'MMMM dd, yyyy')}
               </div>
@@ -69,6 +68,12 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
                   <th className="border border-black px-1 py-px text-center">
                     Item Description
                   </th>
+                  <th className="border border-black px-1 py-px text-center">
+                    Unit Price
+                  </th>
+                  <th className="border border-black px-1 py-px text-center">
+                    Amount
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -85,6 +90,20 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
                       <td className="border border-black px-1 py-px text-center">
                         {item.product_stock?.product?.name}
                       </td>
+                      <td className="border border-black px-1 py-px text-center">
+                        <Php />{' '}
+                        {item.unit_price?.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
+                      </td>
+                      <td className="border border-black px-1 py-px text-center">
+                        <Php />{' '}
+                        {item.total?.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
+                      </td>
                     </tr>
                   )
                 })}
@@ -98,22 +117,6 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
                   <td className="border border-black px-1 py-px text-center">
                     &nbsp;
                   </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="border border-black px-1 py-px text-center">
-                    &nbsp;
-                  </td>
-                  <td className="border border-black px-1 py-px text-center">
-                    &nbsp;
-                  </td>
-                  <td className="border border-black px-1 py-px text-center">
-                    &nbsp;
-                  </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="border border-black px-1 py-px text-center">
-                    &nbsp;
-                  </td>
                   <td className="border border-black px-1 py-px text-center">
                     &nbsp;
                   </td>
@@ -128,11 +131,6 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
                   <td className="border border-black px-1 py-px text-center">
                     &nbsp;
                   </td>
-                  <td className="border border-black px-1 py-px text-center">
-                    &nbsp;
-                  </td>
-                </tr>
-                <tr className="border-b">
                   <td className="border border-black px-1 py-px text-center">
                     &nbsp;
                   </td>
@@ -171,4 +169,4 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
   )
 }
 
-export default ClaimSlipModal
+export default WithrawalSlipModal
