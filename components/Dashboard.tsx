@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import {
@@ -9,7 +10,7 @@ import {
 } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase/client'
 import { SalesOrderItem } from '@/types'
-import { format, parseISO, startOfWeek, subMonths } from 'date-fns'
+import { format, parseISO, startOfWeek } from 'date-fns'
 import { useEffect, useState } from 'react'
 import {
   Bar,
@@ -56,13 +57,25 @@ export default function AdminDashboard() {
   const [showAllLowStock, setShowAllLowStock] = useState(false)
 
   const [salesData, setSalesData] = useState<WeeklySales[]>([])
+  const [topSellingCustomers, setTopSellingCustomers] = useState<
+    {
+      name: string
+      total: number
+    }[]
+  >()
 
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const todayStr = new Date().toISOString().split('T')[0]
+
+  const [dateFrom, setDateFrom] = useState(todayStr)
+  const [dateTo, setDateTo] = useState(todayStr)
 
   useEffect(() => {
     const fetchMetrics = async () => {
       const today = new Date().toISOString().split('T')[0]
+
+      // Use fallback if dates are empty
+      const from = dateFrom || '2000-01-01' // ✅ Default to year 2000
+      const to = dateTo || today
 
       const [
         productStocks,
@@ -71,29 +84,44 @@ export default function AdminDashboard() {
         salesRes,
         purchasesRes,
         lowStockRes,
+        salesCustomerRes,
         bestSellersRes
       ] = await Promise.all([
         supabase
           .from('product_stocks')
           .select('quantity, cost, selling_price, remaining_quantity, missing'),
 
-        supabase.from('sales_orders').select('total_amount').eq('date', today),
         supabase
           .from('sales_orders')
-          .select('date, total_amount')
-          .gte('date', subMonths(new Date(), 5).toISOString()),
+          .select('total_amount')
+          .gte('date', from)
+          .lte('date', to), // ✅ Chart
+
+        supabase.from('sales_orders').select('date, total_amount'),
+        // .gte('date', from)
+        // .lte('date', to), // ✅ Chart
 
         supabase.from('sales_orders').select('total_amount'),
+        // .gte('date', from)
+        // .lte('date', to), // ✅ Sales total
 
         supabase
           .from('purchase_orders')
           .select('total_amount')
           .neq('status', 'draft'),
+        // .gte('date', from)
+        // .lte('date', to), // ✅ Purchases
 
         supabase
           .from('products')
           .select('name, current_quantity, category:category_id(name)')
           .lt('current_quantity', 10),
+
+        supabase
+          .from('sales_orders')
+          .select('customer_id, total_amount, customer:customer_id(name)'),
+        // .gte('date', from)
+        // .lte('date', to), // ✅ Top customers
 
         supabase
           .from('sales_order_items')
@@ -156,6 +184,29 @@ export default function AdminDashboard() {
       const lowStockProducts: LowStockProductType[] | [] | null =
         lowStockRes.data
 
+      // Top Customers
+      const cGrouped: Record<string, { name: string; total: number }> = {}
+
+      for (const row of salesCustomerRes.data ?? []) {
+        const id = row.customer_id
+        const name = (row as any).customer?.name || 'Unknown'
+        const amount = row.total_amount ?? 0
+
+        if (!grouped[id]) {
+          cGrouped[id] = { name, total: 0 }
+        }
+
+        cGrouped[id].total += amount
+      }
+
+      // Convert to sorted array (top 5)
+      const topCustomerList = Object.values(cGrouped)
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 5)
+
+      setTopSellingCustomers(topCustomerList)
+
+      // Best Sellers
       const productSalesMap: Record<
         string,
         { name: string; quantity: number }
@@ -197,7 +248,7 @@ export default function AdminDashboard() {
     }
 
     fetchMetrics()
-  }, [])
+  }, [dateFrom, dateTo])
 
   const displayedProducts = showAllLowStock
     ? metrics?.lowStockProducts
@@ -207,46 +258,64 @@ export default function AdminDashboard() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 p-4">
-      {/* Date Filters */}
-      <div className="md:col-span-4 flex flex-wrap gap-4 items-center justify-start mb-2 px-2">
-        <div className="flex items-center gap-2">
-          <label className="font-semibold text-sm text-gray-700 text-nowrap">
-            From:
-          </label>
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="border rounded px-2 py-1 text-sm"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="font-semibold text-sm text-gray-700 text-nowrap">
-            To:
-          </label>
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="border rounded px-2 py-1 text-sm"
-          />
-        </div>
-        {/* Apply Button */}
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium">
-          Apply Date Filter
-        </Button>
-      </div>
-      <Card className="md:col-span-4 bg-gradient-to-r from-green-600 via-blue-400 to-white text-white shadow-lg">
+      <Card className="md:col-span-4 bg-gray-200">
         <CardHeader>
-          <CardTitle>Today&apos;s Sales</CardTitle>
+          <CardTitle>Sales Summary</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-extrabold tracking-tight">
-            <Php />{' '}
-            {metrics.TodaySales.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })}
+          {/* Date Filters */}
+          <div className="md:col-span-4 flex flex-wrap gap-4 items-center justify-start mb-2 px-2">
+            <div className="flex items-center gap-2">
+              <label className="font-semibold text-sm text-gray-700 text-nowrap">
+                From:
+              </label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="border bg-white rounded px-2 py-1 text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="font-semibold text-sm text-gray-700 text-nowrap">
+                To:
+              </label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="border bg-white rounded px-2 py-1 text-sm"
+              />
+            </div>
+            {/* "Today" Button: only show if either date is not today */}
+            {(dateFrom !== todayStr || dateTo !== todayStr) && (
+              <button
+                onClick={() => {
+                  setDateFrom(todayStr)
+                  setDateTo(todayStr)
+                }}
+                className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium"
+              >
+                Reset to Today
+              </button>
+            )}
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="md:col-span-2 bg-gradient-to-r from-green-600 via-blue-400 to-blue-300 text-white shadow-lg">
+              <CardHeader>
+                <CardTitle>Total Sales</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-extrabold tracking-tight">
+                  <Php />{' '}
+                  {metrics.TodaySales.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </CardContent>
       </Card>
@@ -391,7 +460,7 @@ export default function AdminDashboard() {
       </Card>
       <Card className="md:col-span-2">
         <CardHeader>
-          <CardTitle>Sale Performance</CardTitle>
+          <CardTitle>Sales Performance</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>
@@ -422,6 +491,29 @@ export default function AdminDashboard() {
               />
             </LineChart>
           </ResponsiveContainer>
+        </CardContent>
+      </Card>
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle>Top Customers</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2">
+            {topSellingCustomers?.map((c, i) => (
+              <li
+                key={i}
+                className="flex justify-between border-b pb-1 text-sm text-gray-800"
+              >
+                <span>{c.name}</span>
+                <span className="font-semibold">
+                  ₱{' '}
+                  {c.total.toLocaleString(undefined, {
+                    minimumFractionDigits: 2
+                  })}
+                </span>
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
     </div>
