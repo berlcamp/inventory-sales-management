@@ -1,12 +1,22 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
 import { supabase } from '@/lib/supabase/client'
 import { SalesOrderItem } from '@/types'
+import { format, parseISO, startOfWeek, subMonths } from 'date-fns'
 import { useEffect, useState } from 'react'
 import {
   Bar,
   BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -24,6 +34,8 @@ interface LowStockProductType {
 }
 
 interface DashboardMetrics {
+  totalCostValue: number
+  totalPriceValue: number
   TodaySales: number
   totalSales: number
   totalSalesOrders: number
@@ -33,40 +45,101 @@ interface DashboardMetrics {
   bestSellingProducts: { name: string; quantity: number }[]
 }
 
+interface WeeklySales {
+  week: string
+  total: number
+}
+
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
   const [showAllLowStock, setShowAllLowStock] = useState(false)
+
+  const [salesData, setSalesData] = useState<WeeklySales[]>([])
 
   useEffect(() => {
     const fetchMetrics = async () => {
       const today = new Date().toISOString().split('T')[0]
 
-      const [todaySales, salesRes, purchasesRes, lowStockRes, bestSellersRes] =
-        await Promise.all([
-          supabase
-            .from('sales_orders')
-            .select('total_amount')
-            .eq('date', today),
+      const [
+        productStocks,
+        todaySales,
+        salesChartResponse,
+        salesRes,
+        purchasesRes,
+        lowStockRes,
+        bestSellersRes
+      ] = await Promise.all([
+        supabase
+          .from('product_stocks')
+          .select('quantity, cost, selling_price, remaining_quantity, missing'),
 
-          supabase.from('sales_orders').select('total_amount'),
+        supabase.from('sales_orders').select('total_amount').eq('date', today),
+        supabase
+          .from('sales_orders')
+          .select('created_at, total_amount')
+          .gte('created_at', subMonths(new Date(), 2).toISOString()),
 
-          supabase
-            .from('purchase_orders')
-            .select('total_amount')
-            .neq('status', 'draft'),
+        supabase.from('sales_orders').select('total_amount'),
 
-          supabase
-            .from('products')
-            .select('name, current_quantity, category:category_id(name)')
-            .lt('current_quantity', 10),
+        supabase
+          .from('purchase_orders')
+          .select('total_amount')
+          .neq('status', 'draft'),
 
-          supabase
-            .from('sales_order_items')
-            .select(
-              '*, product_stock:product_stock_id(id, product_id, product:product_id(name))'
-            )
-        ])
-      console.log('salesRes.data', salesRes.data)
+        supabase
+          .from('products')
+          .select('name, current_quantity, category:category_id(name)')
+          .lt('current_quantity', 10),
+
+        supabase
+          .from('sales_order_items')
+          .select(
+            '*, product_stock:product_stock_id(id, product_id, product:product_id(name))'
+          )
+      ])
+
+      // Sales charts
+      const grouped: Record<string, number> = {}
+
+      if (salesChartResponse.data) {
+        for (const row of salesChartResponse.data ?? []) {
+          const createdAt = parseISO(row.created_at)
+          const weekStart = format(
+            startOfWeek(createdAt, { weekStartsOn: 1 }),
+            'yyyy-MM-dd'
+          )
+          grouped[weekStart] =
+            (grouped[weekStart] || 0) + (row.total_amount ?? 0)
+        }
+
+        // Convert to array sorted by week
+        const weeklyData = Object.entries(grouped)
+          .map(([week, total]) => ({ week, total }))
+          .sort(
+            (a, b) => new Date(a.week).getTime() - new Date(b.week).getTime()
+          )
+
+        setSalesData(weeklyData)
+      }
+
+      const totalCostValue =
+        productStocks.data?.reduce((sum, item) => {
+          const remaning_qty = item.remaining_quantity ?? 0
+          // const missing = item.missing ?? 0
+          const missing = 0
+          const cost = item.cost ?? 0
+
+          return sum + (remaning_qty + missing) * cost
+        }, 0) || 0
+
+      const totalPriceValue =
+        productStocks.data?.reduce((sum, item) => {
+          const remaning_qty = item.remaining_quantity ?? 0
+          const cost = item.selling_price ?? 0
+
+          return sum + remaning_qty * cost
+        }, 0) || 0
+
       const TodaySales =
         todaySales.data?.reduce((sum, s) => sum + s.total_amount, 0) || 0
       const totalSales =
@@ -101,6 +174,8 @@ export default function AdminDashboard() {
         .slice(0, 10)
 
       setMetrics({
+        totalPriceValue,
+        totalCostValue,
         TodaySales,
         totalSales,
         totalSalesOrders,
@@ -127,7 +202,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 p-4">
-      <Card className="bg-blue-100 dark:bg-black">
+      <Card className="md:col-span-4 bg-gradient-to-r from-green-600 via-blue-400 to-white text-white shadow-lg">
         <CardHeader>
           <CardTitle>Today&apos;s Sales</CardTitle>
         </CardHeader>
@@ -141,34 +216,43 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
-      {/* 
+
       <Card className="bg-blue-100 dark:bg-black">
         <CardHeader>
-          <CardTitle>Total Sales</CardTitle>
+          <CardTitle>Total Cost of Inventory</CardTitle>
+          <CardDescription>Based on purchase cost</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
             <Php />{' '}
-            {metrics.totalSales.toLocaleString(undefined, {
+            {metrics.totalCostValue.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })}
           </div>
         </CardContent>
-      </Card> */}
+      </Card>
 
       <Card className="bg-blue-100 dark:bg-black">
         <CardHeader>
-          <CardTitle>Sales Orders</CardTitle>
+          <CardTitle>Total Value of Inventory</CardTitle>
+          <CardDescription>Based on current price</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.totalSalesOrders}</div>
+          <div className="text-2xl font-bold">
+            <Php />{' '}
+            {metrics.totalPriceValue.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}
+          </div>
         </CardContent>
       </Card>
 
       <Card className="bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Total Purchases</CardTitle>
+          <CardDescription>Based on purchase orders</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
@@ -184,6 +268,7 @@ export default function AdminDashboard() {
       <Card className="bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Outstanding Payments</CardTitle>
+          <CardDescription>Collectable on Sales Orders</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
@@ -268,6 +353,41 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
+        </CardContent>
+      </Card>
+      <Card className="md:col-span-2">
+        <CardHeader>
+          <CardTitle>Sale Performance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart
+              data={salesData}
+              margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="week"
+                tickFormatter={(val) => format(new Date(val), 'MMM d')}
+              />
+              <YAxis />
+              <Tooltip
+                formatter={(value) =>
+                  `₱ ${Number(value).toLocaleString(undefined, {
+                    minimumFractionDigits: 2
+                  })}`
+                }
+              />
+              <Line
+                type="monotone"
+                dataKey="total"
+                stroke="#4f46e5"
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
     </div>
