@@ -2,10 +2,11 @@
 'use client'
 
 import { supabase } from '@/lib/supabase/client'
-import { SalesOrder } from '@/types'
+import { SalesOrder, SalesOrderItem } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { format } from 'date-fns'
 import { useEffect, useState } from 'react'
+import Php from './Php'
 import { Button } from './ui/button'
 
 // Always update this on other pages
@@ -26,14 +27,36 @@ export const CustomerOrdersModal = ({
 }: ModalProps) => {
   //
   const [logs, setLogs] = useState<SalesOrder[] | null>([])
+  const [runningTotal, setRunningTotal] = useState(0)
 
   useEffect(() => {
     const initForm = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('sales_orders')
         .select('*,order_items:sales_order_items(*,product:product_id(*))')
         .eq('customer_id', customerId)
+
+      if (error) {
+        console.error('Error fetching sales orders:', error)
+        return
+      }
+
       setLogs(data)
+
+      if (data && data.length > 0) {
+        const total = data.reduce((sum, order) => {
+          const orderTotal = (order.order_items || []).reduce(
+            (itemSum: number, item: SalesOrderItem) => {
+              return itemSum + (item.total || 0)
+            },
+            0
+          )
+          return sum + orderTotal
+        }, 0)
+        setRunningTotal(total)
+      } else {
+        setRunningTotal(0)
+      }
     }
 
     if (isOpen) {
@@ -56,7 +79,7 @@ export const CustomerOrdersModal = ({
 
       {/* Centered panel container */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPanel transition className="app__modal_dialog_panel_sm">
+        <DialogPanel transition className="app__modal_dialog_panel">
           {/* Sticky Header */}
           <div className="app__modal_dialog_title_container">
             <DialogTitle as="h3" className="text-base font-medium flex-1">
@@ -68,6 +91,14 @@ export const CustomerOrdersModal = ({
           </div>
           {/* Scrollable Form Content */}
           <div className="app__modal_dialog_content">
+            <div className="mt-4 text-right font-semibold">
+              Total:&nbsp;
+              <Php />{' '}
+              {runningTotal?.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </div>
             <div className="overflow-x-none pb-20">
               <table className="app__table">
                 <thead className="app__thead">
@@ -92,6 +123,7 @@ export const CustomerOrdersModal = ({
                       </td>
                       <td className="app__td">
                         <span className="font-bold">
+                          <Php />{' '}
                           {item.total_amount.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2

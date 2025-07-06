@@ -98,7 +98,7 @@ export const List = ({}) => {
 
     const { id: purchaseOrderId, order_items: products } = selectedItem
 
-    // 1. Mark PO as completed
+    // 1. Mark PO as delivered
     const { error: updateError } = await supabase
       .from('purchase_orders')
       .update({ status: 'delivered' })
@@ -109,34 +109,70 @@ export const List = ({}) => {
       return
     }
 
-    // 2. Insert product stock records
+    // 2. Update order_items: set delivered += to_deliver, to_deliver = 0
+    for (const item of products) {
+      const newlyDelivered = item.to_deliver ?? 0
+      const newDeliveredTotal = (item.delivered ?? 0) + newlyDelivered
+
+      const { error: itemError } = await supabase
+        .from('purchase_order_items')
+        .update({
+          delivered: newDeliveredTotal,
+          to_deliver: 0
+        })
+        .eq('id', item.id)
+
+      if (itemError) {
+        toast.error(`Failed to update item ${item.product_id}`)
+        return
+      }
+    }
+
+    // 3. Insert product stock records
     const stockEntries = products.map((item) => ({
       product_id: item.product_id,
       cost: item.cost,
       selling_price: item.price,
-      quantity: item.quantity,
-      remaining_quantity: item.quantity, // Set remaining = quantity on purchase
-      purchase_date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+      quantity: item.to_deliver ?? 0,
+      remaining_quantity: item.to_deliver ?? 0,
+      purchase_date: new Date().toISOString().split('T')[0],
       purchase_order_id: purchaseOrderId
     }))
 
-    const { error: stockError } = await supabase
-      .from('product_stocks')
-      .insert(stockEntries)
+    const filteredEntries = stockEntries.filter((item) => item.quantity > 0)
 
-    if (stockError) {
-      toast.error('Failed to update product stocks.')
-      return
+    if (filteredEntries.length > 0) {
+      const { error: stockError } = await supabase
+        .from('product_stocks')
+        .insert(filteredEntries)
+
+      if (stockError) {
+        toast.error('Failed to update product stocks.')
+        return
+      }
     }
 
-    // 3. Notify and update Redux state
-    toast.success('Purchase Order delivered and stock updated!')
+    // 4. Insert log
+    await supabase.from('product_change_logs').insert({
+      po_id: purchaseOrderId,
+      user_id: user?.system_user_id,
+      user_name: user?.name,
+      message: `Marked all items as delivered`
+    })
+
+    // 5. Notify and update Redux
+    toast.success('Purchase Order marked as delivered and stocks updated!')
 
     dispatch(
       updateList({
         ...selectedItem,
         status: 'delivered',
-        id: purchaseOrderId
+        id: purchaseOrderId,
+        order_items: products.map((item) => ({
+          ...item,
+          delivered: (item.delivered ?? 0) + (item.to_deliver ?? 0),
+          to_deliver: 0
+        }))
       })
     )
 

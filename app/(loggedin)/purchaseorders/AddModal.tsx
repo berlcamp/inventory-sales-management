@@ -164,7 +164,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             product_id: product.product_id,
             cost: product.cost,
             price: product.price,
-            quantity: product.quantity
+            quantity: product.quantity,
+            to_deliver: product.quantity
           }))
           // for redux
           const purchaseOrderItemsRedux = formdata.products.map((product) => ({
@@ -173,6 +174,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             cost: product.cost,
             price: product.price,
             quantity: product.quantity,
+            to_deliver: product.quantity,
             product: productsList?.find(
               (p) => p.id.toString() === product.product_id.toString()
             )
@@ -239,7 +241,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             product_id: product.product_id,
             cost: product.cost,
             price: product.price,
-            quantity: product.quantity
+            quantity: product.quantity,
+            to_deliver: product.quantity
           }))
           // for redux
           const purchaseOrderItemsRedux = formdata.products.map((product) => ({
@@ -248,6 +251,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             cost: product.cost,
             price: product.price,
             quantity: product.quantity,
+            to_deliver: product.quantity,
             product: productsList?.find(
               (p) => p.id.toString() === product.product_id.toString()
             )

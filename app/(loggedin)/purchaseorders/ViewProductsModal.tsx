@@ -1,6 +1,7 @@
 // components/AddItemTypeModal.tsx
 'use client'
 
+import Php from '@/components/Php'
 import { Button } from '@/components/ui/button'
 import { PurchaseOrder } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
@@ -35,7 +36,7 @@ export const ViewProductsModal = ({
 
       {/* Centered panel container */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPanel transition className="app__modal_dialog_panel_sm">
+        <DialogPanel transition className="app__modal_dialog_panel">
           {/* Sticky Header */}
           <div className="app__modal_dialog_title_container">
             <DialogTitle as="h3" className="text-base font-medium flex-1">
@@ -51,7 +52,9 @@ export const ViewProductsModal = ({
               <thead className="app__thead">
                 <tr>
                   <th className="app__th">Product</th>
-                  <th className="app__th">Quantity</th>
+                  <th className="app__th">Total Quantity</th>
+                  <th className="app__th">To be Delivered</th>
+                  <th className="app__th">Delivered</th>
                   <th className="app__th">Purchase Cost</th>
                   <th className="app__th">Total</th>
                   <th className="app__th">Selling Price</th>
@@ -62,16 +65,17 @@ export const ViewProductsModal = ({
                   <tr key={index} className="app__tr">
                     <td className="app__td">{item.product?.name}</td>
                     <td className="app__td">{item.quantity}</td>
+                    <td className="app__td">{item.to_deliver}</td>
+                    <td className="app__td">{item.delivered}</td>
                     <td className="app__td">
+                      <Php />{' '}
                       {item.cost?.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                       })}
                     </td>
                     <td className="app__td">
-                      {/* {parseFloat(
-                        ((item.quantity ?? 0) * (item.cost ?? 0)).toFixed(2)
-                      )} */}
+                      <Php />{' '}
                       {(
                         (item.quantity ?? 0) * (item.cost ?? 0)
                       )?.toLocaleString(undefined, {
@@ -80,6 +84,7 @@ export const ViewProductsModal = ({
                       })}
                     </td>
                     <td className="app__td">
+                      <Php />{' '}
                       {item.price?.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2

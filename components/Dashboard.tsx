@@ -13,6 +13,7 @@ import {
   YAxis
 } from 'recharts'
 import LoadingSkeleton from './LoadingSkeleton'
+import Php from './Php'
 import { Button } from './ui/button'
 
 interface LowStockProductType {
@@ -126,13 +127,13 @@ export default function AdminDashboard() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 p-4">
-      <Card className="md:col-span-4 bg-gradient-to-r from-green-600 via-blue-400 to-white text-white shadow-lg">
+      <Card className="bg-blue-100 dark:bg-black">
         <CardHeader>
-          <CardTitle className="text-white">Today&apos;s Sales</CardTitle>
+          <CardTitle>Today&apos;s Sales</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-3xl font-extrabold tracking-tight">
-            ₱{' '}
+            <Php />{' '}
             {metrics.TodaySales.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
@@ -140,21 +141,21 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
-
+      {/* 
       <Card className="bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Total Sales</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            ₱{' '}
+            <Php />{' '}
             {metrics.totalSales.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       <Card className="bg-blue-100 dark:bg-black">
         <CardHeader>
@@ -171,7 +172,7 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            ₱{' '}
+            <Php />{' '}
             {metrics.totalPurchases.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
@@ -186,7 +187,7 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            ₱{' '}
+            <Php />{' '}
             {metrics.outstandingPayments.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2

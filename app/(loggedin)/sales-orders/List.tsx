@@ -32,6 +32,7 @@ import { useSelector } from 'react-redux'
 import { AddModal } from './AddModal'
 import { AddPaymentModal } from './AddPaymentModal'
 // import PrintClaimSlip from './PrintClaimSlip'
+import Php from '@/components/Php'
 import ClaimSlipModal from './ClaimSlipModal'
 import { ViewProductsModal } from './ViewProductsModal'
 
@@ -300,7 +301,7 @@ export const List = ({}) => {
                 </div>
               </td>
               <td className="app__td">
-                ₱{' '}
+                <Php />{' '}
                 {item.total_amount?.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2

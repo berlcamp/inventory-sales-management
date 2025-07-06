@@ -1,6 +1,7 @@
 // components/AddItemTypeModal.tsx
 'use client'
 
+import Php from '@/components/Php'
 import { Button } from '@/components/ui/button'
 import { SalesOrder } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
@@ -60,15 +61,24 @@ export const ViewProductsModal = ({
                       {item.product_stock?.product?.name}
                     </td>
                     <td className="app__td">{item.quantity}</td>
-                    <td className="app__td">{item.unit_price}</td>
+                    <td className="app__td">
+                      <Php />{' '}
+                      {item.unit_price?.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      })}
+                    </td>
+
                     <td className="app__td">{item.discount}</td>
                     <td className="app__td">
-                      {parseFloat(
-                        (
-                          (item.quantity ?? 0) * (item.unit_price ?? 0) -
-                          (item.discount ?? 0)
-                        ).toFixed(2)
-                      )}
+                      <Php />{' '}
+                      {(
+                        (item.quantity ?? 0) * (item.unit_price ?? 0) -
+                        (item.discount ?? 0)
+                      )?.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      })}
                     </td>
                   </tr>
                 ))}

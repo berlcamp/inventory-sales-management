@@ -73,6 +73,7 @@ export interface ProductStock {
   purchase_date: string
   logs: ProductStockLog[]
   created_at?: string
+  missing: number
 }
 
 export interface ProductStockLog {
@@ -142,6 +143,8 @@ export interface PurchaseOrderItem {
   total: number
   cost: number
   price: number
+  delivered: number
+  to_deliver: number
 }
 
 export interface PurchaseOrderPayment {

@@ -4,10 +4,12 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase/client'
+import { useAppSelector } from '@/store/hook'
 import { updateList } from '@/store/listSlice'
-import { PurchaseOrder } from '@/types'
+import { PurchaseOrder, RootState } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 import { useDispatch } from 'react-redux'
 
 interface ModalProps {
@@ -24,10 +26,13 @@ export const PartialDeliverModal = ({
   //
   const [partialQuantities, setPartialQuantities] = useState(() =>
     editData.order_items.map((item) => ({
-      quantity: item.quantity // default full quantity
+      quantity: item.quantity, // default full quantity
+      to_deliver: item.to_deliver // default full quantity
     }))
   )
   const dispatch = useDispatch()
+
+  const user = useAppSelector((state: RootState) => state.user.user)
 
   const handleQuantityChange = (index: number, value: number) => {
     setPartialQuantities((prev) =>
@@ -35,7 +40,8 @@ export const PartialDeliverModal = ({
         i === index
           ? {
               ...item,
-              quantity: Math.min(value, editData.order_items[i].quantity)
+              quantity: Math.min(value, editData.order_items[i].quantity),
+              to_deliver: Math.min(value, editData.order_items[i].to_deliver)
             }
           : item
       )
@@ -74,15 +80,23 @@ export const PartialDeliverModal = ({
     }
 
     // Update purchase_order_items
-    const updatedOrderItems = editData.order_items.map((item, index) => ({
-      ...item,
-      quantity: item.quantity - partialQuantities[index].quantity
-    }))
+    const updatedOrderItems = editData.order_items.map((item, index) => {
+      const deliveredQty = partialQuantities[index].quantity
+      return {
+        ...item,
+        delivered: (item.delivered ?? 0) + deliveredQty,
+        to_deliver: (item.to_deliver ?? item.quantity) - deliveredQty
+      }
+    })
 
+    // Update each item in Supabase
     for (const item of updatedOrderItems) {
       await supabase
         .from('purchase_order_items')
-        .update({ quantity: item.quantity })
+        .update({
+          delivered: item.delivered,
+          to_deliver: item.to_deliver
+        })
         .eq('id', item.id)
     }
 
@@ -103,6 +117,15 @@ export const PartialDeliverModal = ({
       })
     )
 
+    // Update logs
+    await supabase.from('product_change_logs').insert({
+      po_id: editData.id,
+      user_id: user?.system_user_id,
+      user_name: user?.name,
+      message: `received partial delivery`
+    })
+
+    toast.success('Updated successfully!')
     onClose()
   }
 
@@ -150,8 +173,8 @@ export const PartialDeliverModal = ({
                       <Input
                         type="number"
                         min={0}
-                        max={item.quantity}
-                        value={partialQuantities[index].quantity}
+                        max={item.to_deliver}
+                        value={partialQuantities[index].to_deliver}
                         onChange={(e) =>
                           handleQuantityChange(index, Number(e.target.value))
                         }

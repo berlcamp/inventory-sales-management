@@ -1,6 +1,7 @@
 'use client'
 
 import { ConfirmationModal } from '@/components/ConfirmationModal'
+import Php from '@/components/Php'
 import { ProductLogsModal } from '@/components/ProductLogsModal'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
@@ -9,6 +10,7 @@ import { ProductStock, RootState } from '@/types' // Import the RootState type
 import { format } from 'date-fns'
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
+import { MissingModal } from './MissingModal'
 import { PriceModal } from './PriceModal'
 
 // Always update this on other pages
@@ -22,6 +24,7 @@ export const StocksList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalAddOpen, setModalAddOpen] = useState(false)
   const [modalLogsOpen, setModalLogsOpen] = useState(false)
+  const [modalMissingOpen, setModalMissingOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
@@ -33,6 +36,11 @@ export const StocksList = () => {
   const handleLogs = (item: ItemType) => {
     setSelectedItem(item)
     setModalLogsOpen(true)
+  }
+
+  const handleAddMissing = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalMissingOpen(true)
   }
 
   // Delete Supplier
@@ -53,12 +61,23 @@ export const StocksList = () => {
     }
   }
 
+  const totalQuantity = list.reduce(
+    (sum, item) => sum + (item.quantity ?? 0),
+    0
+  )
+  const totalRemaining = list.reduce(
+    (sum, item) => sum + (item.remaining_quantity ?? 0),
+    0
+  )
+
   return (
     <div className="overflow-x-none pb-20">
-      <div className="app__title">
-        {/* <Button onClick={() => setModalAddOpen(true)} className="ml-auto">
-          Add Stock
-        </Button> */}
+      <div className="mt-4 text-right">
+        Total Available Stocks:&nbsp;
+        <span className="font-bold">
+          {totalRemaining.toLocaleString()} out of{' '}
+          {totalQuantity.toLocaleString()}
+        </span>
       </div>
       <table className="app__table">
         <thead className="app__thead">
@@ -69,6 +88,7 @@ export const StocksList = () => {
             <th className="app__th">Purchase Cost</th>
             <th className="app__th">Selling Price</th>
             <th className="app__th">Remaining Quantity</th>
+            <th className="app__th">Missing</th>
             <th className="app__th"></th>
           </tr>
         </thead>
@@ -85,13 +105,26 @@ export const StocksList = () => {
                   : 'Invalid date'}
               </td>
               <td className="app__td">{item.quantity}</td>
-              <td className="app__td">{item.cost}</td>
-              <td className="app__td">{item.selling_price}</td>
+              <td className="app__td">
+                <Php />{' '}
+                {item.cost?.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </td>
+              <td className="app__td">
+                <Php />{' '}
+                {item.selling_price?.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </td>
               <td className="app__td">
                 <span className="font-bold text-lg">
                   {item.remaining_quantity}
                 </span>
               </td>
+              <td className="app__td">{item.missing}</td>
               <td className="app__td">
                 <div className="flex items-center space-x-2">
                   <div
@@ -100,6 +133,15 @@ export const StocksList = () => {
                   >
                     <span className="text-blue-800 text-nowrap">
                       Update Price
+                    </span>
+                  </div>
+                  <div>|</div>
+                  <div
+                    onClick={() => handleAddMissing(item)}
+                    className="cursor-pointer"
+                  >
+                    <span className="text-blue-800 text-nowrap">
+                      Add Missing
                     </span>
                   </div>
                   <div>|</div>
@@ -133,6 +175,13 @@ export const StocksList = () => {
           isOpen={modalLogsOpen}
           stockId={selectedItem.id}
           onClose={() => setModalLogsOpen(false)}
+        />
+      )}
+      {selectedItem && (
+        <MissingModal
+          isOpen={modalMissingOpen}
+          editData={selectedItem}
+          onClose={() => setModalMissingOpen(false)}
         />
       )}
     </div>
