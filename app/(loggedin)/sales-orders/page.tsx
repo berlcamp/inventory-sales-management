@@ -6,6 +6,7 @@ import { PER_PAGE } from '@/constants'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { addList } from '@/store/listSlice' // Make sure this path is correct
+import { SalesOrderPayment } from '@/types'
 import { useEffect, useState } from 'react'
 import { AddModal } from './AddModal'
 import { Filter } from './Filter'
@@ -37,14 +38,16 @@ export default function Page() {
           { count: 'exact' }
         )
         .ilike('po_number', `%${filter}%`)
-        .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
         .order('id', { ascending: false })
+        .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
 
       if (filterCustomer !== '') {
         query = query.eq('customer_id', filterCustomer)
       }
 
-      if (filterPaymentStatus) {
+      if (filterPaymentStatus === 'PDC') {
+        query = query.not('payments', 'is', null) // only orders with payments
+      } else if (filterPaymentStatus) {
         query = query.eq('payment_status', filterPaymentStatus)
       }
 
@@ -53,8 +56,15 @@ export default function Page() {
       if (error) {
         console.error(error)
       } else {
-        // Update the list of suppliers in Redux store
-        dispatch(addList(data))
+        if (filterPaymentStatus === 'PDC') {
+          const filteredData = data?.filter((order) =>
+            order.payments?.some((p: SalesOrderPayment) => p.type === 'PDC')
+          )
+          dispatch(addList(filteredData))
+        } else {
+          dispatch(addList(data))
+        }
+
         setTotalCount(count || 0)
       }
       setLoading(false)

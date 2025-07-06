@@ -217,6 +217,7 @@ export const Filter = ({
                       <SelectItem value="unpaid">Unpaid</SelectItem>
                       <SelectItem value="partial">Partial</SelectItem>
                       <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="PDC">PDC</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>
