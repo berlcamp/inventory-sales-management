@@ -41,6 +41,7 @@ const FormSchema = z.object({
   customer_id: z.coerce.number().min(1, 'Customer is required'),
   date: z.string().min(1, 'PO Date is required'),
   po_number: z.string().optional(),
+  delivery_fee: z.coerce.number(),
   so_number: z.string().min(1, 'SO Number is required'),
   products: z.array(
     z.object({
@@ -99,6 +100,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       po_number: '',
       so_number: '',
       customer_id: 0,
+      delivery_fee: 0,
       products: [
         {
           product_id: 0,
@@ -129,7 +131,10 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         sum + (product.unit_price * product.quantity - (product.discount ?? 0))
       )
     }, 0)
-    const total = parseFloat(totalAmount.toFixed(2))
+
+    // Add delivery fee (default to 0 if undefined or null)
+    const totalWithDelivery = totalAmount + (formdata.delivery_fee ?? 0)
+    const total = parseFloat(totalWithDelivery.toFixed(2))
 
     try {
       // If editing an existing PO
@@ -138,6 +143,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           date: formdata.date,
           customer_id: formdata.customer_id,
           total_amount: total,
+          delivery_fee: formdata.delivery_fee,
           po_number: formdata.po_number ?? '',
           so_number: formdata.so_number ?? ''
         }
@@ -226,6 +232,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         const newData = {
           date: formdata.date,
           customer_id: formdata.customer_id,
+          delivery_fee: formdata.delivery_fee,
           so_number: formdata.so_number,
           po_number: formdata.po_number ?? '',
           total_amount: total,
@@ -969,6 +976,27 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                         <PlusIcon className="w-5 h-5" /> Add More Item
                       </Button>
                     </div>
+                  </div>
+                  <div>
+                    <FormField
+                      control={form.control}
+                      name="delivery_fee"
+                      render={({ field }) => (
+                        <FormItem className="max-w-40">
+                          <FormLabel className="app__formlabel_standard">
+                            Delivery Fee
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Delivery Fee"
+                              className="app__input_standard w-72!"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
                 <div className="app__modal_dialog_footer">

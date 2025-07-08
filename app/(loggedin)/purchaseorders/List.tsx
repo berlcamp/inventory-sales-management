@@ -43,6 +43,7 @@ export const List = ({}) => {
   const dispatch = useAppDispatch()
   const list = useSelector((state: RootState) => state.list.value)
   const user = useSelector((state: RootState) => state.user.user)
+  const [saving, setSaving] = useState(false)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalAddOpen, setModalAddOpen] = useState(false)
@@ -95,6 +96,8 @@ export const List = ({}) => {
 
   const handleMarkComplete = async () => {
     if (!selectedItem) return
+
+    setSaving(true)
 
     const { id: purchaseOrderId, order_items: products } = selectedItem
 
@@ -176,6 +179,7 @@ export const List = ({}) => {
       })
     )
 
+    setSaving(false)
     setModalMarkCompleteOpen(false)
   }
 
@@ -227,6 +231,13 @@ export const List = ({}) => {
 
   return (
     <div className="overflow-x-none">
+      {saving && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="text-white text-lg font-semibold animate-pulse">
+            Processing...
+          </div>
+        </div>
+      )}
       <table className="app__table">
         <thead className="app__thead">
           <tr>

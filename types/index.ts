@@ -175,6 +175,7 @@ export interface SalesOrder {
   payment_status: 'unpaid' | 'partial' | 'paid'
   so_number: string
   total_amount: number
+  delivery_fee: number
   discount_type: DiscountType
   discount_value: number
   created_at?: string
