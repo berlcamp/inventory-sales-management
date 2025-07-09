@@ -84,7 +84,7 @@ export const List = ({}) => {
       } else {
         toast.success('Successfully deleted!')
 
-        // delete item to Redux s
+        // delete item to Redux ss
         // Get the category the product belongs to
         const category = list.find(
           (c: Category) => c.id === selectedItem.category_id
