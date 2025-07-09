@@ -4,8 +4,8 @@ import { ProductLogsModal } from '@/components/ProductLogsModal'
 import { countAllStocks, countAvailableStocks } from '@/lib/helpers'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
-import { deleteItem } from '@/store/listSlice'
-import { Product, RootState } from '@/types' // Import the RootState type
+import { updateList } from '@/store/listSlice'
+import { Category, Product, RootState } from '@/types' // Import the RootState type
 import {
   Menu,
   MenuButton,
@@ -36,6 +36,9 @@ export const List = ({}) => {
   const [modalLogsOpen, setModalLogsOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
+  const [expandedCategoryId, setExpandedCategoryId] = useState<number | null>(
+    null
+  )
 
   // Handle opening the confirmation modal for deleting a supplier
   const handleDeleteConfirmation = (item: ItemType) => {
@@ -72,12 +75,31 @@ export const List = ({}) => {
         .eq('id', selectedItem.id)
 
       if (error) {
-        console.error('Error deleting:', error.message)
+        console.error(error)
+        if (error.code === '23503') {
+          toast.error(
+            'Product cannot be deleted as it is associated to one of your sales or purchase orders.'
+          )
+        }
       } else {
         toast.success('Successfully deleted!')
 
         // delete item to Redux
-        dispatch(deleteItem(selectedItem))
+        // Get the category the product belongs to
+        const category = list.find(
+          (c: Category) => c.id === selectedItem.category_id
+        )
+
+        if (category) {
+          dispatch(
+            updateList({
+              ...category,
+              products: category.products.filter(
+                (p: Product) => p.id !== selectedItem.id
+              )
+            })
+          )
+        }
         setIsModalOpen(false)
       }
     }
@@ -96,98 +118,131 @@ export const List = ({}) => {
           </tr>
         </thead>
         <tbody>
-          {list.map((item: ItemType) => (
-            <tr key={item.id} className="app__tr">
-              <td className="w-6 pl-4 app__td">
-                <Menu as="div" className="app__menu_container">
-                  <div>
-                    <MenuButton className="app__dropdown_btn">
-                      <ChevronDown className="h-5 w-5" aria-hidden="true" />
-                    </MenuButton>
+          {list.map((category: Category) => (
+            <Fragment key={category.id}>
+              <tr
+                className="app__tr cursor-pointer"
+                onClick={() =>
+                  setExpandedCategoryId((prev) =>
+                    prev === category.id ? null : category.id
+                  )
+                }
+              >
+                <td className="w-12 pl-4 app__td">&nbsp;</td>
+                <td className="app__td">
+                  <div className="font-bold cursor-pointer">
+                    {category.name}
                   </div>
+                  <div className="mt-2 space-x-2">
+                    <span className="text-xs text-blue-800 cursor-pointer font-medium">
+                      {expandedCategoryId === category.id
+                        ? 'Hide Products'
+                        : 'View Products'}
+                    </span>
+                  </div>
+                </td>
+                <td className="app__td"></td>
+                <td className="app__td"></td>
+                <td className="app__td"></td>
+              </tr>
 
-                  <Transition
-                    as={Fragment}
-                    enter="transition ease-out duration-100"
-                    enterFrom="transform opacity-0 scale-95"
-                    enterTo="transform opacity-100 scale-100"
-                    leave="transition ease-in duration-75"
-                    leaveFrom="transform opacity-100 scale-100"
-                    leaveTo="transform opacity-0 scale-95"
-                  >
-                    <MenuItems className="app__dropdown_items">
-                      <div className="py-1">
-                        <MenuItem>
-                          <div
-                            onClick={() => handleManageStocks(item)}
-                            className="app__dropdown_item"
-                          >
-                            <LayersIcon className="w-4 h-4" />
-                            <span>Manage Stocks</span>
-                          </div>
-                        </MenuItem>
-                        <MenuItem>
-                          <div
-                            onClick={() => handleEdit(item)}
-                            className="app__dropdown_item"
-                          >
-                            <PencilIcon className="w-4 h-4" />
-                            <span>Edit Product Details</span>
-                          </div>
-                        </MenuItem>
-                        <MenuItem>
-                          <div
-                            onClick={() => handleDeleteConfirmation(item)}
-                            className="app__dropdown_item"
-                          >
-                            <TrashIcon className="w-4 h-4" />
-                            <span>Delete</span>
-                          </div>
-                        </MenuItem>
+              {expandedCategoryId === category.id &&
+                category.products?.map((item: ItemType) => (
+                  <tr key={item.id} className="app__tr">
+                    <td className="w-12 app__td border-l-2 border-gray-200 space-y-2">
+                      <Menu as="div" className="app__menu_container">
+                        <div>
+                          <MenuButton className="app__dropdown_btn">
+                            <ChevronDown
+                              className="h-5 w-5"
+                              aria-hidden="true"
+                            />
+                          </MenuButton>
+                        </div>
+                        <Transition
+                          as={Fragment}
+                          enter="transition ease-out duration-100"
+                          enterFrom="transform opacity-0 scale-95"
+                          enterTo="transform opacity-100 scale-100"
+                          leave="transition ease-in duration-75"
+                          leaveFrom="transform opacity-100 scale-100"
+                          leaveTo="transform opacity-0 scale-95"
+                        >
+                          <MenuItems className="app__dropdown_items">
+                            <div className="py-1">
+                              <MenuItem>
+                                <div
+                                  onClick={() => handleManageStocks(item)}
+                                  className="app__dropdown_item"
+                                >
+                                  <LayersIcon className="w-4 h-4" />
+                                  <span>Manage Stocks</span>
+                                </div>
+                              </MenuItem>
+                              <MenuItem>
+                                <div
+                                  onClick={() => handleEdit(item)}
+                                  className="app__dropdown_item"
+                                >
+                                  <PencilIcon className="w-4 h-4" />
+                                  <span>Edit Product Details</span>
+                                </div>
+                              </MenuItem>
+                              <MenuItem>
+                                <div
+                                  onClick={() => handleDeleteConfirmation(item)}
+                                  className="app__dropdown_item"
+                                >
+                                  <TrashIcon className="w-4 h-4" />
+                                  <span>Delete</span>
+                                </div>
+                              </MenuItem>
+                            </div>
+                          </MenuItems>
+                        </Transition>
+                      </Menu>
+                    </td>
+                    <td className="app__td">
+                      <div className="font-medium">{item.name}</div>
+                      <div className="mt-2 space-x-2">
+                        <span
+                          className="text-xs text-blue-800 cursor-pointer font-medium"
+                          onClick={() => handleViewSales(item)}
+                        >
+                          View Sales
+                        </span>
+                        <span>|</span>
+                        <span
+                          className="text-xs text-blue-800 cursor-pointer font-medium"
+                          onClick={() => handleManageStocks(item)}
+                        >
+                          Manage Stocks & Prices
+                        </span>
+                        <span>|</span>
+                        <span
+                          className="text-xs text-blue-800 cursor-pointer font-medium"
+                          onClick={() => handleLogs(item)}
+                        >
+                          View Logs
+                        </span>
                       </div>
-                    </MenuItems>
-                  </Transition>
-                </Menu>
-              </td>
-              <td className="app__td">
-                <div className="font-medium">{item.name}</div>
-                <div className="mt-2 space-x-2">
-                  <span
-                    className="text-xs text-blue-800 cursor-pointer font-medium"
-                    onClick={() => handleViewSales(item)}
-                  >
-                    View Sales
-                  </span>
-                  <span>|</span>
-                  <span
-                    className="text-xs text-blue-800 cursor-pointer font-medium"
-                    onClick={() => handleManageStocks(item)}
-                  >
-                    Manage Stocks & Prices
-                  </span>
-                  <span>|</span>
-                  <span
-                    className="text-xs text-blue-800 cursor-pointer font-medium"
-                    onClick={() => handleLogs(item)}
-                  >
-                    View Logs
-                  </span>
-                </div>
-              </td>
-              <td className="app__td">{item.unit}</td>
-              <td className="app__td">{item.category?.name}</td>
-              <td className="app__td">
-                {item.stocks && (
-                  <div>
-                    <span className="font-bold text-lg">
-                      {countAvailableStocks(item.stocks)}
-                    </span>{' '}
-                    <span>out of </span>
-                    <span>{countAllStocks(item.stocks)}</span>
-                  </div>
-                )}
-              </td>
-            </tr>
+                    </td>
+                    <td className="app__td">{item.unit}</td>
+                    <td className="app__td">{item.category?.name}</td>
+                    <td className="app__td">
+                      {item.stocks && (
+                        <div>
+                          <span className="font-bold text-lg">
+                            {countAvailableStocks(item.stocks)}
+                          </span>{' '}
+                          <span>out of </span>
+                          <span>{countAllStocks(item.stocks)}</span>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+            </Fragment>
           ))}
         </tbody>
       </table>

@@ -53,7 +53,9 @@ const MainSidebar = () => {
               currentRoute === '/categories' ? 'app_menu_link_active' : ''
             }`}
           >
-            <span className="flex-1 ml-3 whitespace-nowrap">Categories</span>
+            <span className="flex-1 ml-3 whitespace-nowrap">
+              Categories Settings
+            </span>
           </Link>
         </li>
 

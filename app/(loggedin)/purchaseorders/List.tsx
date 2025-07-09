@@ -96,6 +96,7 @@ export const List = ({}) => {
 
   const handleMarkComplete = async () => {
     if (!selectedItem) return
+    if (saving) return
 
     setSaving(true)
 

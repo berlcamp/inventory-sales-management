@@ -352,6 +352,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       form.reset({
         date: editData ? editData.date : '',
         customer_id: editData ? editData.customer_id : 0,
+        delivery_fee: editData ? editData.delivery_fee : 0,
         po_number: editData ? editData.po_number : '',
         so_number: soNumber,
         products: editData?.order_items?.map((item) => ({
@@ -363,6 +364,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           total: item.unit_price * item.quantity // Calculate total (cost * quantity)
         })) || [
           {
+            product_id: 0,
             product_stock_id: 0,
             quantity: 0,
             unit_price: 0,
@@ -1003,7 +1005,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                   <Button type="button" onClick={onClose} variant="outline">
                     Cancel
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" disabled={isSubmitting}>
                     {editData ? (
                       'Update'
                     ) : (

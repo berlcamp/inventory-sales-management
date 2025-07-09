@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // components/AddItemTypeModal.tsx
 'use client'
 
@@ -26,9 +27,9 @@ import {
 } from '@/components/ui/popover'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import { useAppDispatch } from '@/store/hook'
-import { addItem, updateList } from '@/store/listSlice'
-import { Category, Product } from '@/types'
+import { useAppDispatch, useAppSelector } from '@/store/hook'
+import { updateList } from '@/store/listSlice'
+import { Category, Product, RootState } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, ChevronsUpDown } from 'lucide-react'
@@ -65,6 +66,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const dispatch = useAppDispatch()
 
+  const list = useAppSelector((state: RootState) => state.list.value)
+
   // Category dropdown
   const [open, setOpen] = useState(false)
 
@@ -79,7 +82,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
   // Submit handler
   const onSubmit = async (data: FormType) => {
-    if (isSubmitting) return // 🚫 Prevent double-submit
+    if (isSubmitting) return
     setIsSubmitting(true)
 
     try {
@@ -89,55 +92,103 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         category_id: data.category_id
       }
 
-      // If exists (editing), update it
       if (editData?.id) {
-        const { error } = await supabase
+        // UPDATE EXISTING PRODUCT
+        const { data: updated, error } = await supabase
           .from(table)
           .update(newData)
           .eq('id', editData.id)
+          .select('*, category:category_id(*)')
 
         if (error) {
-          console.error('Error updating ItemType:', error)
-        } else {
-          //Update list on redux
-          dispatch(
-            updateList({
-              ...newData,
-              category: categories?.find(
-                (c) => c.id.toString() === newData.category_id.toString()
-              ),
-              id: editData.id
-            })
-          ) // ✅ Update Redux with new data
+          console.error('Error updating product:', error)
+          toast.error('Failed to update product.')
+        } else if (updated && updated[0]) {
+          const updatedProduct = {
+            ...updated[0],
+            category:
+              updated[0].category ||
+              categories?.find((c) => c.id === newData.category_id)
+          }
+
+          // Get old and new category IDs
+          const oldCategoryId = editData.category_id
+          const newCategoryId = updatedProduct.category_id
+
+          // ✅ Dispatch update for old category (remove the product)
+          if (oldCategoryId && oldCategoryId !== newCategoryId) {
+            const oldCategory = list.find((cat) => cat.id === oldCategoryId)
+            if (oldCategory) {
+              dispatch(
+                updateList({
+                  ...oldCategory,
+                  products: oldCategory.products?.filter(
+                    (p: Product) => p.id !== updatedProduct.id
+                  )
+                })
+              )
+            }
+          }
+
+          // ✅ Dispatch update for new category (add/update the product)
+          const newCategory = list.find((cat) => cat.id === newCategoryId)
+          if (newCategory) {
+            const alreadyExists = newCategory.products?.some(
+              (p: Product) => p.id === updatedProduct.id
+            )
+            dispatch(
+              updateList({
+                ...newCategory,
+                products: alreadyExists
+                  ? newCategory.products?.map((p: Product) =>
+                      p.id === updatedProduct.id ? updatedProduct : p
+                    )
+                  : [...(newCategory.products || []), updatedProduct]
+              })
+            )
+          }
+
+          toast.success('Product updated successfully!')
           onClose()
         }
       } else {
-        // Add new one
-        const { data, error } = await supabase
+        // ADD NEW PRODUCT
+        const { data: inserted, error } = await supabase
           .from(table)
           .insert([newData])
-          .select()
+          .select('*, category:category_id(*)')
 
         if (error) {
-          console.error('Error adding ItemType:', error)
-        } else {
-          // Insert new item to Redux
-          dispatch(
-            addItem({
-              ...newData,
-              category: categories?.find(
-                (c) => c.id.toString() === newData.category_id.toString()
-              ),
-              id: data[0].id
-            })
+          console.error('Error adding product:', error)
+          toast.error('Failed to add product.')
+        } else if (inserted && inserted[0]) {
+          const newProduct = {
+            ...inserted[0],
+            category:
+              inserted[0].category ||
+              categories?.find((c) => c.id === newData.category_id)
+          }
+
+          const targetCategory = list.find(
+            (cat) => cat.id === newProduct.category_id
           )
+
+          if (targetCategory) {
+            dispatch(
+              updateList({
+                ...targetCategory,
+                products: [...(targetCategory.products || []), newProduct]
+              })
+            )
+          }
+
+          toast.success('Product added successfully!')
           onClose()
         }
       }
-
-      toast.success('Successfully saved!')
     } catch (err) {
       console.error('Submission error:', err)
+      toast.error('Something went wrong.')
     } finally {
       setIsSubmitting(false)
     }

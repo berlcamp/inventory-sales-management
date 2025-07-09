@@ -24,6 +24,8 @@ export const PartialDeliverModal = ({
   editData
 }: ModalProps) => {
   //
+  const [saving, setSaving] = useState(false)
+
   const [partialQuantities, setPartialQuantities] = useState(() =>
     editData.order_items.map((item) => ({
       quantity: item.quantity, // default full quantity
@@ -49,6 +51,9 @@ export const PartialDeliverModal = ({
   }
 
   const handlePartialDelivery = async () => {
+    if (saving) return // ⛔️ Prevent re-entry
+    setSaving(true)
+
     const deliveredItems = editData.order_items
       .map((item, index) => ({
         product_id: item.product_id,
@@ -59,7 +64,6 @@ export const PartialDeliverModal = ({
       }))
       .filter((item) => item.quantity > 0)
 
-    // Insert stocks
     const stockEntries = deliveredItems.map((item) => ({
       product_id: item.product_id,
       cost: item.cost,
@@ -79,17 +83,17 @@ export const PartialDeliverModal = ({
       return
     }
 
-    // Update purchase_order_items
     const updatedOrderItems = editData.order_items.map((item, index) => {
       const deliveredQty = partialQuantities[index].quantity
+      const newDelivered = (item.delivered ?? 0) + deliveredQty
+      const newToDeliver = (item.to_deliver ?? item.quantity) - deliveredQty
       return {
         ...item,
-        delivered: (item.delivered ?? 0) + deliveredQty,
-        to_deliver: (item.to_deliver ?? item.quantity) - deliveredQty
+        delivered: newDelivered,
+        to_deliver: newToDeliver < 0 ? 0 : newToDeliver
       }
     })
 
-    // Update each item in Supabase
     for (const item of updatedOrderItems) {
       await supabase
         .from('purchase_order_items')
@@ -100,24 +104,25 @@ export const PartialDeliverModal = ({
         .eq('id', item.id)
     }
 
-    const hasRemaining = updatedOrderItems.some((item) => item.quantity > 0)
+    // Check final status
+    const allDelivered = updatedOrderItems.every(
+      (item) => item.to_deliver === 0
+    )
+    const status = allDelivered ? 'delivered' : 'partially delivered'
 
-    // Update purchase_order status
     await supabase
       .from('purchase_orders')
-      .update({ status: hasRemaining ? 'partially delivered' : 'completed' })
+      .update({ status })
       .eq('id', editData.id)
 
-    // 🔁 Update Redux store
     dispatch(
       updateList({
         ...editData,
-        status: hasRemaining ? 'partially delivered' : 'completed',
+        status,
         order_items: updatedOrderItems
       })
     )
 
-    // Update logs
     await supabase.from('product_change_logs').insert({
       po_id: editData.id,
       user_id: user?.system_user_id,
@@ -126,6 +131,7 @@ export const PartialDeliverModal = ({
     })
 
     toast.success('Updated successfully!')
+    setSaving(false)
     onClose()
   }
 
@@ -147,6 +153,14 @@ export const PartialDeliverModal = ({
         <DialogPanel transition className="app__modal_dialog_panel_sm">
           {/* Sticky Header */}
           <div className="app__modal_dialog_title_container">
+            {/* Saving overlay inside modal */}
+            {saving && (
+              <div className="absolute inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
+                <div className="text-white text-lg font-semibold animate-pulse">
+                  Processing...
+                </div>
+              </div>
+            )}
             <DialogTitle as="h3" className="text-base font-medium flex-1">
               Partially Delivered Items
             </DialogTitle>
@@ -186,8 +200,8 @@ export const PartialDeliverModal = ({
               </tbody>
             </table>
             <div className="mt-6 flex justify-end">
-              <Button onClick={handlePartialDelivery}>
-                Deliver Selected Quantities
+              <Button onClick={handlePartialDelivery} disabled={saving}>
+                {saving ? 'Processing...' : 'Deliver Selected Quantities'}
               </Button>
             </div>
           </div>

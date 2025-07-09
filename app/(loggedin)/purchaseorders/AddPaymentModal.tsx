@@ -397,7 +397,7 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       )}
                   </div>
                   <div className="app__modal_dialog_footer border-t-0! mt-0">
-                    <Button type="submit">
+                    <Button type="submit" disabled={isSubmitting}>
                       <span>{isSubmitting ? 'Saving..' : 'Add Payment'}</span>
                     </Button>
                   </div>
