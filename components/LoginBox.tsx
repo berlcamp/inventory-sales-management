@@ -23,7 +23,7 @@ export default function LoginBox({ message }: { message?: string }) {
       style={{ backgroundImage: "url('/bg.png')" }} // 🔁 Replace with your image path
     >
       {/* 50% Dark Overlay */}
-      <div className="absolute inset-0 bg-black opacity-50 z-0" />
+      <div className="absolute inset-0 bg-black opacity-60 z-0" />
 
       {/* Foreground Content */}
       <div className="relative z-10 w-full max-w-md bg-white dark:bg-gray-900 px-24 py-14 rounded-2xl shadow-lg space-y-6">

@@ -132,7 +132,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           supplier_id: formdata.supplier_id,
           remarks: formdata.remarks,
           po_number: formdata.po_number,
-          total_amount: total
+          total_amount: total,
+          company_id: process.env.NEXT_PUBLIC_COMPANY_ID
         }
 
         // Step 1: Delete existing purchase order items
@@ -220,7 +221,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           total_amount: total,
           remarks: formdata.remarks,
           status: 'draft',
-          payment_status: 'unpaid'
+          payment_status: 'unpaid',
+          company_id: process.env.NEXT_PUBLIC_COMPANY_ID
         }
 
         // If adding a new PO
@@ -309,6 +311,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     const { data, error } = await supabase
       .from('purchase_orders')
       .select('po_number')
+      .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
       .ilike('po_number', `${prefix}%`)
       .order('po_number', { ascending: false })
       .limit(1)
@@ -366,11 +369,13 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       const { data } = await supabase
         .from('products')
         .select('*')
+        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
         .order('name', { ascending: true })
 
       const { data: suppliersData } = await supabase
         .from('suppliers')
         .select('*')
+        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
         .order('name', { ascending: true })
 
       setProductsList(data)

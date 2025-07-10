@@ -145,7 +145,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           total_amount: total,
           delivery_fee: formdata.delivery_fee,
           po_number: formdata.po_number ?? '',
-          so_number: formdata.so_number ?? ''
+          so_number: formdata.so_number ?? '',
+          company_id: process.env.NEXT_PUBLIC_COMPANY_ID
         }
 
         // Step 1: Delete existing sales order items
@@ -179,7 +180,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             discount: product.discount,
             quantity: product.quantity,
             total: product.total,
-            product_id: product.product_id
+            product_id: product.product_id,
+            company_id: process.env.NEXT_PUBLIC_COMPANY_ID
           }))
           // for redux
           const salesOrderItemsRedux = formdata.products.map((product) => ({
@@ -237,7 +239,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           po_number: formdata.po_number ?? '',
           total_amount: total,
           status: 'reserved',
-          payment_status: 'unpaid'
+          payment_status: 'unpaid',
+          company_id: process.env.NEXT_PUBLIC_COMPANY_ID
         }
 
         // If adding a new PO
@@ -260,7 +263,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             discount: product.discount,
             quantity: product.quantity,
             total: product.total,
-            product_id: product.product_id
+            product_id: product.product_id,
+            company_id: process.env.NEXT_PUBLIC_COMPANY_ID
           }))
           // for redux
           const salesOrderItemsRedux = formdata.products.map((product) => ({
@@ -325,6 +329,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     const { data, error } = await supabase
       .from('sales_orders')
       .select('so_number')
+      .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
       .ilike('so_number', `${prefix}%`)
       .order('so_number', { ascending: false })
       .limit(1)

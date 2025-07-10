@@ -29,6 +29,7 @@ export default function Page() {
       const { data, count, error } = await supabase
         .from('suppliers')
         .select('*', { count: 'exact' })
+        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
         .ilike('name', `%${filter}%`)
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
         .order('id', { ascending: false })

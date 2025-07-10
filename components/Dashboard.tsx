@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle
 } from '@/components/ui/card'
@@ -24,6 +25,7 @@ import {
   YAxis
 } from 'recharts'
 import LoadingSkeleton from './LoadingSkeleton'
+import { OutstandingPayments } from './OutstandingPayments'
 import Php from './Php'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -56,6 +58,7 @@ export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
   const [showAllLowStock, setShowAllLowStock] = useState(false)
 
+  const [isViewOutstandingOpen, setIsViewOutstandingOpen] = useState(false)
   const [salesData, setSalesData] = useState<WeeklySales[]>([])
   const [topSellingCustomers, setTopSellingCustomers] = useState<
     {
@@ -89,25 +92,34 @@ export default function AdminDashboard() {
       ] = await Promise.all([
         supabase
           .from('product_stocks')
-          .select('quantity, cost, selling_price, remaining_quantity, missing'),
+          .select('quantity, cost, selling_price, remaining_quantity, missing')
+          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID),
 
         supabase
           .from('sales_orders')
           .select('total_amount')
+          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
           .gte('date', from)
           .lte('date', to), // ✅ Chart
 
-        supabase.from('sales_orders').select('date, total_amount'),
+        supabase
+          .from('sales_orders')
+          .select('date, total_amount')
+          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID),
         // .gte('date', from)
         // .lte('date', to), // ✅ Chart
 
-        supabase.from('sales_orders').select('total_amount'),
+        supabase
+          .from('sales_orders')
+          .select('total_amount')
+          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID),
         // .gte('date', from)
         // .lte('date', to), // ✅ Sales total
 
         supabase
           .from('purchase_orders')
           .select('total_amount')
+          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
           .neq('status', 'draft'),
         // .gte('date', from)
         // .lte('date', to), // ✅ Purchases
@@ -115,11 +127,13 @@ export default function AdminDashboard() {
         supabase
           .from('products')
           .select('name, current_quantity, category:category_id(name)')
+          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
           .lt('current_quantity', 10),
 
         supabase
           .from('sales_orders')
-          .select('customer_id, total_amount, customer:customer_id(name)'),
+          .select('customer_id, total_amount, customer:customer_id(name)')
+          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID),
         // .gte('date', from)
         // .lte('date', to), // ✅ Top customers
 
@@ -128,12 +142,12 @@ export default function AdminDashboard() {
           .select(
             '*, product_stock:product_stock_id(id, product_id, product:product_id(name))'
           )
+          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
       ])
 
       // Sales charts
       const grouped: Record<string, number> = {}
 
-      console.log('salesChartResponse.data', salesChartResponse.data)
       if (salesChartResponse.data) {
         for (const row of salesChartResponse.data ?? []) {
           const createdAt = parseISO(row.date)
@@ -258,7 +272,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 p-4">
-      <Card className="md:col-span-4 bg-gray-200">
+      <Card className="md:col-span-4 bg-gray-200 dark:bg-black">
         <CardHeader>
           <CardTitle>Sales Summary</CardTitle>
         </CardHeader>
@@ -340,7 +354,7 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card className="bg-blue-100 dark:bg-black">
+      <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Total Cost of Inventory</CardTitle>
           <CardDescription>Based on purchase cost</CardDescription>
@@ -356,7 +370,7 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card className="bg-blue-100 dark:bg-black">
+      <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Total Value of Inventory</CardTitle>
           <CardDescription>Based on current price</CardDescription>
@@ -372,7 +386,7 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card className="bg-blue-100 dark:bg-black">
+      <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Total Purchases</CardTitle>
           <CardDescription>Based on purchase orders</CardDescription>
@@ -388,10 +402,12 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card className="bg-blue-100 dark:bg-black">
+      <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Outstanding Payments</CardTitle>
-          <CardDescription>Collectable on Sales Orders</CardDescription>
+          <CardDescription>
+            <span>Collectable on Sales Orders </span>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
@@ -402,6 +418,14 @@ export default function AdminDashboard() {
             })}
           </div>
         </CardContent>
+        <CardFooter>
+          <span
+            onClick={() => setIsViewOutstandingOpen(true)}
+            className="cursor-pointer text-blue-600 font-medium text-nowrap"
+          >
+            View All
+          </span>
+        </CardFooter>
       </Card>
 
       <Card className="md:col-span-2">
@@ -536,6 +560,11 @@ export default function AdminDashboard() {
           </ul>
         </CardContent>
       </Card>
+
+      <OutstandingPayments
+        isOpen={isViewOutstandingOpen}
+        onClose={() => setIsViewOutstandingOpen(false)}
+      />
     </div>
   )
 }

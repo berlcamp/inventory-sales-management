@@ -29,6 +29,7 @@ export default function Page() {
         .select('*,products(*,stocks:product_stocks(*))', {
           count: 'exact'
         })
+        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
         .order('name', { ascending: false })
 
       if (error) {

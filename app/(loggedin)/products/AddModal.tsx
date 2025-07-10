@@ -89,7 +89,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       const newData = {
         name: data.name,
         unit: data.unit,
-        category_id: data.category_id
+        category_id: data.category_id,
+        company_id: process.env.NEXT_PUBLIC_COMPANY_ID
       }
 
       if (editData?.id) {
@@ -208,6 +209,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       const { data } = await supabase
         .from('categories')
         .select('*')
+        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
         .order('name', { ascending: true })
 
       setCategories(data)

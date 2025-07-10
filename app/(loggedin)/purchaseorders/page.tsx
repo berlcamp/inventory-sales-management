@@ -32,6 +32,7 @@ export default function Page() {
           '*,supplier:supplier_id(*),payments:purchase_payments(*),order_items:purchase_order_items(*,product:product_id(*))',
           { count: 'exact' }
         )
+        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
         .ilike('po_number', `%${filter}%`)
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
         .order('id', { ascending: false })

@@ -59,7 +59,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
     try {
       const newData = {
-        name: data.name
+        name: data.name,
+        company_id: process.env.NEXT_PUBLIC_COMPANY_ID
       }
 
       // If exists (editing), update it
