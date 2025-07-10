@@ -14,7 +14,19 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Inventory-Sales-Management',
-  description: 'POS by BTC'
+  description: 'Inventory-Sales-Management by BTC',
+  openGraph: {
+    title: 'Inventory Sales Management',
+    description: 'Inventory Sales Management',
+    images: [
+      {
+        url: 'https://ac23.ph/bg.png', // Full URL to the image
+        width: 964,
+        height: 608,
+        alt: 'Asenso Pinoy Membership'
+      }
+    ]
+  }
 }
 
 export default async function RootLayout({
