@@ -62,9 +62,23 @@ export default function AuthCallback() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-gray-800 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg space-y-6">
-        We are verifying your account, please wait...
+    <div className="relative h-screen w-screen">
+      {/* Background Image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: "url('/bg.png')"
+        }}
+      ></div>
+      {/* Dark Overlay */}
+      <div className="absolute inset-0 bg-black opacity-60"></div>
+
+      <div className="relative z-10 flex items-center justify-center h-full">
+        <div className="p-10 rounded-xl text-white text-center max-w-xl w-full mx-4">
+          <h1 className="text-base font-bold mb-8 text-nowrap">
+            We are verifying your account, please wait...
+          </h1>
+        </div>
       </div>
     </div>
   )

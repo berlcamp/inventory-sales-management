@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { type NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
+  console.log('POST request from:', req.url)
   const supabase = await getSupabaseClient()
 
   // Check if a user's logged in
@@ -15,7 +16,5 @@ export async function POST(req: NextRequest) {
   }
 
   revalidatePath('/', 'layout')
-  return NextResponse.redirect(new URL('/login', req.url), {
-    status: 302
-  })
+  return NextResponse.redirect('https://ac23.ph', { status: 302 })
 }
