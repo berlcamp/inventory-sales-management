@@ -36,10 +36,10 @@ export default function LoginBox({ message }: { message?: string }) {
           Sales & Inventory Tracker
         </h1>
         {process.env.NEXT_PUBLIC_COMPANY_ID === '1' && (
-          <h1 className="text-2xl font-bold text-blue-900">HARDWARE</h1>
+          <h1 className="text-3xl font-bold text-blue-900">HARDWARE</h1>
         )}
         {process.env.NEXT_PUBLIC_COMPANY_ID === '2' && (
-          <h1 className="text-2xl font-semibold text-gray-900">CEMENT</h1>
+          <h1 className="text-3xl font-semibold text-blue-900">CEMENT</h1>
         )}
         <p className="text-sm text-gray-600">
           To get started, sign in using google
