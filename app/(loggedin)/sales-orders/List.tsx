@@ -58,6 +58,8 @@ export const List = ({}) => {
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
+  const [saving, setSaving] = useState(false)
+
   // Handle opening the confirmation modal for deleting a supplier
   const handleDeleteConfirmation = (item: ItemType) => {
     setSelectedItem(item)
@@ -90,6 +92,8 @@ export const List = ({}) => {
 
   const handleMarkComplete = async () => {
     if (!selectedItem) return
+
+    setSaving(true)
 
     const updatedData = selectedItem.order_items.map((order) => {
       const currentRemaining = order.product_stock?.remaining_quantity ?? 0
@@ -143,6 +147,7 @@ export const List = ({}) => {
       })
     )
     setModalMarkCompleteOpen(false)
+    setSaving(false)
   }
 
   const openClaimSlip = async (item: ItemType) => {
@@ -181,6 +186,13 @@ export const List = ({}) => {
 
   return (
     <div className="overflow-x-none">
+      {saving && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="text-white text-lg font-semibold animate-pulse">
+            Processing...
+          </div>
+        </div>
+      )}
       <table className="app__table">
         <thead className="app__thead">
           <tr>
