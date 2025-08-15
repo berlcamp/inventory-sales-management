@@ -292,9 +292,9 @@ export const List = ({}) => {
               <td className="app__td">
                 <div className="font-medium">
                   {item.customer?.name}{' '}
-                  <span className="text-xs">
+                  {/* <span className="text-xs">
                     [{item.customer?.company_id}-{item.customer?.id}]
-                  </span>
+                  </span> */}
                 </div>
                 <div className="text-xs text-gray-500">
                   {item.customer?.address}

@@ -27,6 +27,7 @@ export const SalesModal = ({ isOpen, onClose, productId }: ModalProps) => {
         .from('sales_order_items')
         .select('*,sales_order:sales_order_id(*,customer:customer_id(*))')
         .eq('product_id', productId)
+        .order('id', { ascending: false })
       setSales(data)
     }
 
