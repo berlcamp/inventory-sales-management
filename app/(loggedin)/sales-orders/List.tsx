@@ -361,7 +361,7 @@ export const List = ({}) => {
                   {(item.payment_status === 'unpaid' ||
                     item.payment_status === 'partial' ||
                     item.payment_status === 'paid') &&
-                  user?.user_metadata?.sffo_role === 'admin' ? (
+                  user?.user_metadata?.sffo_role !== 'zzzz' ? (
                     <Menu as="div" className="relative">
                       <MenuButton
                         as={Badge}
