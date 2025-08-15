@@ -106,8 +106,8 @@ export const CustomerOrdersModal = ({
                   <tr>
                     <th className="app__th">Date</th>
                     <th className="app__th">SO Number</th>
-                    <th className="app__th">Total Amount</th>
                     <th className="app__th">Products</th>
+                    <th className="app__th">Total Amount</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -122,6 +122,19 @@ export const CustomerOrdersModal = ({
                       <td className="app__td">
                         <span className="font-bold">{item.so_number}</span>
                       </td>
+
+                      <td className="app__td">
+                        <span>
+                          {item.order_items.length > 0 &&
+                            item.order_items.map((item) => (
+                              <div key={item.id}>
+                                <span>{item.product?.name}</span>
+                                <span>{item.quantity}</span>
+                                <span>{item.unit_price}</span>
+                              </div>
+                            ))}
+                        </span>
+                      </td>
                       <td className="app__td">
                         <span className="font-bold">
                           <Php />{' '}
@@ -129,14 +142,6 @@ export const CustomerOrdersModal = ({
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                           })}
-                        </span>
-                      </td>
-                      <td className="app__td">
-                        <span>
-                          {item.order_items.length > 0 &&
-                            item.order_items.map((item) => (
-                              <div key={item.id}>{item.product?.name}</div>
-                            ))}
                         </span>
                       </td>
                     </tr>
