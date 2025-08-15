@@ -18,8 +18,8 @@ export default function LoginBox({ message }: { message?: string }) {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center pt-10 justify-start bg-white px-4">
-      <div className="w-full max-w-md space-y-6 text-center">
+    <main className="min-h-screen flex flex-col items-center justify-start bg-black px-4">
+      <div className="w-full md:max-w-[800px] max-w-md space-y-6 h-screen text-center py-10 bg-white px-10">
         {/* Logo (optional replace with your own) */}
         <div className="flex justify-center">
           <Image
