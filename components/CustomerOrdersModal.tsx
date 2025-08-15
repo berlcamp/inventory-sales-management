@@ -132,7 +132,7 @@ export const CustomerOrdersModal = ({
                                 <span>{item.product?.name}</span>
                                 <span>|</span>
                                 <span>
-                                  ({item.quantity} x {item.unit_price})
+                                  ({item.quantity} x <Php /> {item.unit_price})
                                 </span>
                                 <span></span>
                               </div>

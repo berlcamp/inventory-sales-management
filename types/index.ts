@@ -161,6 +161,7 @@ export interface PurchaseOrderPayment {
 export interface Customer {
   id: number
   name: string
+  company_id: string
   contact_number?: string
   address?: string
   created_at?: string

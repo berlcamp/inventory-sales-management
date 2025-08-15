@@ -397,6 +397,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       const { data: customersData } = await supabase
         .from('customers')
         .select('*')
+        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
         .order('name', { ascending: true })
 
       setProductsList(data)
