@@ -42,11 +42,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`dark:bg-[#191919] ${
-          !user
-            ? 'min-h-screen bg-gradient-to-br from-purple-900 via-teal-500 to-blue-600 bg-[length:200%_200%] animate-aurora'
-            : ''
-        }`}
+        className={`dark:bg-[#191919] ${!user ? 'min-h-screen bg-white' : ''}`}
       >
         <Toaster />
         <Providers>
