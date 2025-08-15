@@ -36,6 +36,7 @@ export const CustomerOrdersModal = ({
         .select('*,order_items:sales_order_items(*,product:product_id(*))')
         .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
         .eq('customer_id', customerId)
+        .order('id', { ascending: false })
 
       if (error) {
         console.error('Error fetching sales orders:', error)
@@ -136,6 +137,7 @@ export const CustomerOrdersModal = ({
                                 <span></span>
                               </div>
                             ))}
+                          g
                         </span>
                       </td>
                       <td className="app__td">
