@@ -199,26 +199,47 @@ export default function AdminDashboard() {
         lowStockRes.data
 
       // Top Customers
+      // const cGrouped: Record<string, { name: string; total: number }> = {}
+
+      // for (const row of salesCustomerRes.data ?? []) {
+      //   const id = row.customer_id
+      //   const name = (row as any).customer?.name || 'Unknown'
+      //   const amount = row.total_amount ?? 0
+
+      //   if (!grouped[id]) {
+      //     cGrouped[id] = { name, total: 0 }
+      //   }
+
+      //   cGrouped[id].total += amount
+      // }
+
+      // // Convert to sorted array (top 5)
+      // const topCustomerList = Object.values(cGrouped)
+      //   .sort((a, b) => b.total - a.total)
+      //   .slice(0, 5)
+
+      // Group totals by customer
       const cGrouped: Record<string, { name: string; total: number }> = {}
 
+      console.log('salesCustomerRes', salesCustomerRes)
       for (const row of salesCustomerRes.data ?? []) {
         const id = row.customer_id
         const name = (row as any).customer?.name || 'Unknown'
         const amount = row.total_amount ?? 0
 
-        if (!grouped[id]) {
+        if (!cGrouped[id]) {
           cGrouped[id] = { name, total: 0 }
         }
 
         cGrouped[id].total += amount
       }
 
-      // Convert to sorted array (top 5)
-      const topCustomerList = Object.values(cGrouped)
+      // Convert to array and sort by total (descending)
+      const topCustomers = Object.values(cGrouped)
         .sort((a, b) => b.total - a.total)
-        .slice(0, 5)
+        .slice(0, 10) // limit to top 10 customers
 
-      setTopSellingCustomers(topCustomerList)
+      setTopSellingCustomers(topCustomers)
 
       // Best Sellers
       const productSalesMap: Record<
