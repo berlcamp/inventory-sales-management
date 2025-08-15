@@ -1,7 +1,6 @@
 'use client'
 
 import AdminDashboard from '@/components/Dashboard'
-import LoadingSkeleton from '@/components/LoadingSkeleton'
 import { supabase } from '@/lib/supabase/client'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -28,7 +27,7 @@ export default function Home() {
   }, [router])
 
   if (isLoading) {
-    return <LoadingSkeleton />
+    return <div></div>
   } else {
     if (!isSession) {
       return (
