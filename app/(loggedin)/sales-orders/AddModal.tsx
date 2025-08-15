@@ -319,40 +319,41 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     }
   }
 
-  async function generateSONumber() {
-    const fullYear = new Date().getFullYear()
-    const shortYear = String(fullYear).slice(-2) // "25"
+  // async function generateSONumber() {
+  //   const fullYear = new Date().getFullYear()
+  //   const shortYear = String(fullYear).slice(-2) // "25"
 
-    const prefix = `${shortYear}`
+  //   const prefix = `${shortYear}`
 
-    // Match like "25%"
-    const { data, error } = await supabase
-      .from('sales_orders')
-      .select('so_number')
-      .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
-      .ilike('so_number', `${prefix}%`)
-      .order('so_number', { ascending: false })
-      .limit(1)
+  //   // Match like "25%"
+  //   const { data, error } = await supabase
+  //     .from('sales_orders')
+  //     .select('so_number')
+  //     .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+  //     .ilike('so_number', `${prefix}%`)
+  //     .order('so_number', { ascending: false })
+  //     .limit(1)
 
-    if (error) throw error
+  //   if (error) throw error
 
-    let nextSeries = 1
+  //   let nextSeries = 1
 
-    if (data.length > 0) {
-      const lastPo = data[0].so_number // e.g., "PO-HDW-25010"
-      const lastSeries = parseInt(lastPo.slice(-3), 10) // get last 3 digits
-      nextSeries = lastSeries + 1
-    }
+  //   if (data.length > 0) {
+  //     const lastPo = data[0].so_number // e.g., "PO-HDW-25010"
+  //     const lastSeries = parseInt(lastPo.slice(-3), 10) // get last 3 digits
+  //     nextSeries = lastSeries + 1
+  //   }
 
-    const paddedSeries = String(nextSeries).padStart(3, '0') // 010
-    const newPoNumber = `${prefix}${paddedSeries}` // PO-HDW-25010
+  //   const paddedSeries = String(nextSeries).padStart(3, '0') // 010
+  //   const newPoNumber = `${prefix}${paddedSeries}` // PO-HDW-25010
 
-    return newPoNumber
-  }
+  //   return newPoNumber
+  // }
 
   useEffect(() => {
     const initForm = async () => {
-      const soNumber = editData ? editData.so_number : await generateSONumber()
+      // const soNumber = editData ? editData.so_number : await generateSONumber()
+      const soNumber = editData ? editData.so_number : ''
 
       form.reset({
         date: editData ? editData.date : '',
