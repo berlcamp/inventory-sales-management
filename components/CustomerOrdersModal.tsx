@@ -34,6 +34,7 @@ export const CustomerOrdersModal = ({
       const { data, error } = await supabase
         .from('sales_orders')
         .select('*,order_items:sales_order_items(*,product:product_id(*))')
+        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
         .eq('customer_id', customerId)
 
       if (error) {
