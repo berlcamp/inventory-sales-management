@@ -38,7 +38,7 @@ export default function Page() {
           { count: 'exact' }
         )
         .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
-        .ilike('po_number', `%${filter}%`)
+        .ilike('so_number', `%${filter}%`)
         .order('id', { ascending: false })
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
 

@@ -130,7 +130,9 @@ export const List = ({}) => {
                 </Menu>
               </td>
               <td className="app__td">
-                <div className="font-medium">{item.name}</div>
+                <div className="font-medium">
+                  {item.name} <span className="text-xs">[{item.id}]</span>
+                </div>
                 <div className="mt-2 space-x-2">
                   <span
                     className="text-xs text-blue-800 cursor-pointer font-medium"

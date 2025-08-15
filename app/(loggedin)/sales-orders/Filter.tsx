@@ -112,12 +112,12 @@ export const Filter = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="app__formlabel_standard">
-                    Search by Customer PO Number
+                    Search by Customer SO Number
                   </FormLabel>
                   <FormControl>
                     <Input
                       className="app__input_standard"
-                      placeholder="PO Number"
+                      placeholder="SO Number"
                       type="text"
                       {...field}
                       value={field.value ?? ''}
