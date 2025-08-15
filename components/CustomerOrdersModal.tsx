@@ -127,10 +127,13 @@ export const CustomerOrdersModal = ({
                         <span>
                           {item.order_items.length > 0 &&
                             item.order_items.map((item) => (
-                              <div key={item.id}>
+                              <div key={item.id} className="space-x-2">
                                 <span>{item.product?.name}</span>
-                                <span>{item.quantity}</span>
-                                <span>{item.unit_price}</span>
+                                <span>|</span>
+                                <span>
+                                  ({item.quantity} x {item.unit_price})
+                                </span>
+                                <span></span>
                               </div>
                             ))}
                         </span>
