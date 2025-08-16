@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase/client'
 import { RootState } from '@/store'
 import { useAppSelector } from '@/store/hook'
-import { Customer } from '@/types'
+import { Customer, SalesOrderPayment } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+import { format } from 'date-fns'
 import { useEffect, useState } from 'react'
 
 type ConfirmationModalProps = {
@@ -38,6 +39,11 @@ export const OutstandingPayments = ({
 
   const [processing, setProcessing] = useState(false)
   const [orders, setOrders] = useState<DisplayOrder[]>([])
+  const [history, setHistory] = useState<SalesOrderPayment[]>([])
+
+  const [openHistoryOrderId, setOpenHistoryOrderId] = useState<number | null>(
+    null
+  )
 
   useEffect(() => {
     if (!isOpen) return
@@ -91,6 +97,29 @@ export const OutstandingPayments = ({
     fetchData()
   }, [isOpen, user?.company_id])
 
+  const handleTogglePaymentHistory = async (id: number) => {
+    if (openHistoryOrderId === id) {
+      // If same order clicked again → close it
+      setOpenHistoryOrderId(null)
+      setHistory([])
+      return
+    }
+
+    // Otherwise load and show this order's history
+    const { data, error } = await supabase
+      .from('sales_order_payments')
+      .select()
+      .eq('sales_order_id', id)
+      .order('date', { ascending: false })
+
+    if (error) {
+      console.error(error)
+    } else {
+      setHistory(data)
+      setOpenHistoryOrderId(id)
+    }
+  }
+
   if (!isOpen) return null
 
   return (
@@ -133,6 +162,57 @@ export const OutstandingPayments = ({
                         maximumFractionDigits: 2
                       })}
                     </div>
+                    <div className="text-sm mt-4 text-blue-800">
+                      <span
+                        onClick={() => handleTogglePaymentHistory(order.id)}
+                        className="cursor-pointer"
+                      >
+                        {openHistoryOrderId === order.id
+                          ? 'Hide Payments History'
+                          : 'View Payments History'}
+                      </span>
+                    </div>
+
+                    {openHistoryOrderId === order.id && (
+                      <div className="mt-2">
+                        <table className="w-full text-sm border bg-white">
+                          <thead>
+                            <tr>
+                              <th className="app__th">Date</th>
+                              <th className="app__th">Amount Received</th>
+                              <th className="app__th">Type</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {history?.map((item) => (
+                              <tr key={item.id} className="app__tr">
+                                <td className="app__td">
+                                  {item.date &&
+                                  !isNaN(new Date(item.date).getTime())
+                                    ? format(
+                                        new Date(item.date),
+                                        'MMMM dd, yyyy'
+                                      )
+                                    : 'Invalid date'}
+                                </td>
+                                <td className="app__td">{item.amount}</td>
+                                <td className="app__td">
+                                  {item.type}{' '}
+                                  {item.due_date &&
+                                    `(Due Date: ${item.due_date})`}{' '}
+                                  {item.bank && `(Bank: ${item.bank})`}
+                                </td>
+                              </tr>
+                            ))}
+                            {history.length === 0 && (
+                              <tr>
+                                <td colSpan={3}></td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

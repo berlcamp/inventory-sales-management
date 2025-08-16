@@ -200,7 +200,7 @@ export default function AdminDashboard() {
       const totalSalesOrders = salesRes.data?.length || 0
       const totalPurchases =
         purchasesRes.data?.reduce((sum, p) => sum + p.total_amount, 0) || 0
-      const outstandingPayments = totalSales - (await getTotalSalesPayments())
+      const outstandingPayments = await getOutstandingPayments()
       const lowStockProducts: LowStockProductType[] | [] | null =
         lowStockRes.data
 
@@ -283,23 +283,23 @@ export default function AdminDashboard() {
       })
     }
 
-    const getTotalSalesPayments = async (): Promise<number> => {
-      // const res = await supabase.from('sales_order_payments').select('amount')
-      // return res.data?.reduce((sum, p) => sum + p.amount, 0) || 0
-
+    const getOutstandingPayments = async (): Promise<number> => {
       const { data, error } = await supabase
-        .from('sales_order_payments')
-        .select('amount, sales_orders!inner(company_id)')
-        .eq('sales_orders.company_id', user?.company_id)
+        .from('sales_orders')
+        .select('total_amount')
+        .neq('payment_status', 'Deposited')
 
       if (error) {
-        console.error('Error fetching sales payments:', error.message)
+        console.error('Error fetching outstanding payments:', error.message)
         return 0
       }
 
-      return data?.reduce((sum, p) => sum + (p.amount ?? 0), 0) || 0
-    }
+      // Sum all total_amount values
+      const total =
+        data?.reduce((acc, item) => acc + (item.total_amount || 0), 0) ?? 0
 
+      return total
+    }
     fetchMetrics()
   }, [dateFrom, dateTo, user?.company_id])
 

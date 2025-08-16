@@ -173,7 +173,7 @@ export interface SalesOrder {
   id: number
   customer_id?: number
   status: 'draft' | 'completed' | 'reserved' | 'approved'
-  payment_status: 'unpaid' | 'partial' | 'paid'
+  payment_status: string
   so_number: string
   total_amount: number
   delivery_fee: number

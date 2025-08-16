@@ -132,10 +132,6 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
           updateList({
             ...editData,
             id: editData.id,
-            payment_status:
-              totalReceived + formdata.amount >= editData.total_amount
-                ? 'paid'
-                : 'partial',
             payments: [...list, formdata] // include the new payment in the list
           })
         )
@@ -182,19 +178,11 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
         })
       )
 
-      const totalReceived = (list as ItemType[]).reduce(
-        (total, item) => total + item.amount,
-        0
-      )
-      const remainingAmount = editData.total_amount - totalReceived
-
       // Update main list payment status
       dispatch(
         updateList({
           ...editData,
-          id: editData.id,
-          payment_status:
-            remainingAmount >= editData.total_amount ? 'paid' : 'partial'
+          id: editData.id
         })
       )
 
@@ -219,8 +207,6 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
         dispatch(
           updateList({
             ...editData,
-            payment_status:
-              totalReceived - selectedItem.amount <= 0 ? 'unpaid' : 'partial',
             id: editData.id
           })
         )

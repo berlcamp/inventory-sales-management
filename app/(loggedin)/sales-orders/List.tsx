@@ -18,11 +18,14 @@ import {
 } from '@headlessui/react'
 import { format } from 'date-fns'
 import {
+  Banknote,
   CheckSquare,
   ChevronDown,
   EyeIcon,
+  OctagonPause,
   PencilIcon,
   PhilippinePeso,
+  ShieldAlert,
   TrashIcon
 } from 'lucide-react'
 import { Fragment, useState } from 'react'
@@ -53,11 +56,14 @@ export const List = ({}) => {
   const [modalMarkApproveOpen, setModalMarkApproveOpen] = useState(false)
   const [modalLogsOpen, setModalLogsOpen] = useState(false)
   const [modalCustomerOpen, setModalCustomerOpen] = useState(false)
+  const [modalConfirmChangeStatus, setModalConfirmChangeStatus] =
+    useState(false)
 
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
   const [isPrintWSModalOpen, setIsPrintWSModalOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
+  const [selectedStatus, setSelectedStatus] = useState('')
 
   const [saving, setSaving] = useState(false)
 
@@ -93,6 +99,44 @@ export const List = ({}) => {
   const handleMarkApprovedConfirmation = (item: ItemType) => {
     setSelectedItem(item)
     setModalMarkApproveOpen(true)
+  }
+
+  const handleChangeStatusConfirmation = (item: ItemType, status: string) => {
+    setSelectedItem(item)
+    setSelectedStatus(status)
+    setModalConfirmChangeStatus(true)
+  }
+
+  const handleChangeStatus = async () => {
+    if (!selectedItem) return
+
+    setSaving(true)
+
+    await supabase
+      .from('sales_orders')
+      .update({ payment_status: selectedStatus })
+      .eq('id', selectedItem.id)
+
+    toast.success('Sales Order updated successfully!')
+
+    // Update logs
+    await supabase.from('product_change_logs').insert({
+      sales_order_id: selectedItem.id,
+      user_id: user?.system_user_id,
+      user_name: user?.name,
+      message: `updated status to ${selectedStatus}`
+    })
+
+    // Update Redux state
+    dispatch(
+      updateList({
+        ...selectedItem,
+        payment_status: selectedStatus,
+        id: selectedItem.id
+      })
+    )
+    setModalConfirmChangeStatus(false)
+    setSaving(false)
   }
 
   const handleMarkComplete = async () => {
@@ -429,58 +473,92 @@ export const List = ({}) => {
               {/* PAYMENT STATUS COLUMN */}
               <td className="app__td">
                 <div className="flex space-x-1">
-                  {(item.payment_status === 'unpaid' ||
-                    item.payment_status === 'partial' ||
-                    item.payment_status === 'paid') &&
-                  user?.user_metadata?.sffo_role !== 'zzzz' ? (
-                    <Menu as="div" className="relative">
-                      <MenuButton
-                        as={Badge}
-                        className={`flex items-center space-x-1 cursor-pointer ${
-                          item.payment_status === 'partial'
-                            ? 'bg-orange-600 text-white'
-                            : item.payment_status === 'paid'
-                            ? 'bg-green-600 text-white'
-                            : ''
-                        }`}
-                      >
-                        <span>
-                          {item.payment_status === 'partial'
-                            ? 'Partially Paid'
-                            : item.payment_status}
-                        </span>
-                        <ChevronDown className="h-4 w-4" />
-                      </MenuButton>
+                  <Menu as="div" className="relative">
+                    <MenuButton
+                      as={Badge}
+                      className={`flex items-center space-x-1 cursor-pointer ${
+                        item.payment_status === 'partial'
+                          ? 'bg-orange-600 text-white'
+                          : item.payment_status === 'Cheque'
+                          ? 'bg-orange-600 text-white'
+                          : item.payment_status === 'Hold'
+                          ? 'bg-orange-600 text-white'
+                          : item.payment_status === 'Deposited'
+                          ? 'bg-green-600 text-white'
+                          : ''
+                      }`}
+                    >
+                      <span>
+                        {item.payment_status === 'partial'
+                          ? 'Partially Paid'
+                          : item.payment_status}
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </MenuButton>
 
-                      <Transition as={Fragment}>
-                        <MenuItems className="app__dropdown_items_left">
-                          <div className="py-1">
-                            <MenuItem>
-                              <div
-                                onClick={() => handleReceivePayment(item)}
-                                className="app__dropdown_item"
-                              >
-                                <PhilippinePeso className="w-4 h-4" />
-                                <span>Manage Payments</span>
-                              </div>
-                            </MenuItem>
-                          </div>
-                        </MenuItems>
-                      </Transition>
-                    </Menu>
-                  ) : (
-                    <>
-                      {item.payment_status === 'unpaid' && (
-                        <Badge>{item.payment_status}</Badge>
-                      )}
-                      {item.payment_status === 'partial' && (
-                        <Badge variant="orange">Partially Paid</Badge>
-                      )}
-                      {item.payment_status === 'paid' && (
-                        <Badge variant="green">{item.payment_status}</Badge>
-                      )}
-                    </>
-                  )}
+                    <Transition as={Fragment}>
+                      <MenuItems className="app__dropdown_items_left">
+                        <div className="py-1">
+                          <MenuItem>
+                            <div
+                              onClick={() =>
+                                handleChangeStatusConfirmation(item, 'Cheque')
+                              }
+                              className="app__dropdown_item"
+                            >
+                              <Banknote className="w-4 h-4" />
+                              <span>Mark as Cheque</span>
+                            </div>
+                          </MenuItem>
+                          <MenuItem>
+                            <div
+                              onClick={() =>
+                                handleChangeStatusConfirmation(item, 'Hold')
+                              }
+                              className="app__dropdown_item"
+                            >
+                              <OctagonPause className="w-4 h-4" />
+                              <span>Mark as Hold</span>
+                            </div>
+                          </MenuItem>
+                          <MenuItem>
+                            <div
+                              onClick={() =>
+                                handleChangeStatusConfirmation(
+                                  item,
+                                  'Deposited'
+                                )
+                              }
+                              className="app__dropdown_item"
+                            >
+                              <CheckSquare className="w-4 h-4" />
+                              <span>Mark as Deposited</span>
+                            </div>
+                          </MenuItem>
+                          <MenuItem>
+                            <div
+                              onClick={() =>
+                                handleChangeStatusConfirmation(item, 'unpaid')
+                              }
+                              className="app__dropdown_item"
+                            >
+                              <ShieldAlert className="w-4 h-4" />
+                              <span>Mark as Unpaid</span>
+                            </div>
+                          </MenuItem>
+                          <MenuItem>
+                            <div
+                              onClick={() => handleReceivePayment(item)}
+                              className="app__dropdown_item"
+                            >
+                              <PhilippinePeso className="w-4 h-4" />
+                              <span>Manage Payments</span>
+                            </div>
+                          </MenuItem>
+                        </div>
+                      </MenuItems>
+                    </Transition>
+                  </Menu>
                   {item.payments && checkPDC(item.payments) && (
                     <Badge variant="orange">PDC</Badge>
                   )}
@@ -502,6 +580,12 @@ export const List = ({}) => {
         onClose={() => setModalMarkCompleteOpen(false)}
         onConfirm={handleMarkComplete}
         message="Are you sure you want to mark this as complete?"
+      />
+      <ConfirmationModal
+        isOpen={modalConfirmChangeStatus}
+        onClose={() => setModalConfirmChangeStatus(false)}
+        onConfirm={handleChangeStatus}
+        message="Are you sure you want to change the status?"
       />
       <ConfirmationModal
         isOpen={modalMarkApproveOpen}
