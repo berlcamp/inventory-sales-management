@@ -32,6 +32,8 @@ import {
 } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { RootState } from '@/store'
+import { useAppSelector } from '@/store/hook'
 import { Customer } from '@/types'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, ChevronsUpDown } from 'lucide-react'
@@ -58,6 +60,8 @@ export const Filter = ({
   // Category dropdown
   const [open, setOpen] = useState(false)
   const [customers, setCustomers] = useState<Customer[] | null>(null)
+
+  const user = useAppSelector((state: RootState) => state.user.user)
 
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
@@ -93,6 +97,7 @@ export const Filter = ({
       const { data } = await supabase
         .from('customers')
         .select('*')
+        .eq('company_id', user?.company_id)
         .order('name', { ascending: true })
 
       setCustomers(data)

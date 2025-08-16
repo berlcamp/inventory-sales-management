@@ -114,7 +114,7 @@ export default function AdminDashboard() {
 
         supabase
           .from('sales_orders')
-          .select('total_amount')
+          .select('total_amount, delivery_fee')
           .eq('company_id', user?.company_id),
         // .gte('date', from)
         // .lte('date', to), // ✅ Sales total
@@ -193,7 +193,10 @@ export default function AdminDashboard() {
       const TodaySales =
         todaySales.data?.reduce((sum, s) => sum + s.total_amount, 0) || 0
       const totalSales =
-        salesRes.data?.reduce((sum, s) => sum + s.total_amount, 0) || 0
+        salesRes.data?.reduce(
+          (sum, s) => sum + (s.total_amount + s.delivery_fee),
+          0
+        ) || 0
       const totalSalesOrders = salesRes.data?.length || 0
       const totalPurchases =
         purchasesRes.data?.reduce((sum, p) => sum + p.total_amount, 0) || 0
@@ -281,8 +284,20 @@ export default function AdminDashboard() {
     }
 
     const getTotalSalesPayments = async (): Promise<number> => {
-      const res = await supabase.from('sales_order_payments').select('amount')
-      return res.data?.reduce((sum, p) => sum + p.amount, 0) || 0
+      // const res = await supabase.from('sales_order_payments').select('amount')
+      // return res.data?.reduce((sum, p) => sum + p.amount, 0) || 0
+
+      const { data, error } = await supabase
+        .from('sales_order_payments')
+        .select('amount, sales_orders!inner(company_id)')
+        .eq('sales_orders.company_id', user?.company_id)
+
+      if (error) {
+        console.error('Error fetching sales payments:', error.message)
+        return 0
+      }
+
+      return data?.reduce((sum, p) => sum + (p.amount ?? 0), 0) || 0
     }
 
     fetchMetrics()
@@ -410,7 +425,7 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
+      {/* <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Total Purchases</CardTitle>
           <CardDescription>Based on purchase orders</CardDescription>
@@ -424,11 +439,29 @@ export default function AdminDashboard() {
             })}
           </div>
         </CardContent>
+      </Card> */}
+      <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
+        <CardHeader>
+          <CardTitle>Accounts Received</CardTitle>
+          <CardDescription>Received Payments</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            <Php />{' '}
+            {(metrics.totalSales - metrics.outstandingPayments).toLocaleString(
+              undefined,
+              {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              }
+            )}
+          </div>
+        </CardContent>
       </Card>
 
       <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
         <CardHeader>
-          <CardTitle>Account Receivable</CardTitle>
+          <CardTitle>Accounts Receivable</CardTitle>
           <CardDescription>
             <span>Collectable on Sales Orders </span>
           </CardDescription>

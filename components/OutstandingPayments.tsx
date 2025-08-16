@@ -2,6 +2,8 @@
 
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase/client'
+import { RootState } from '@/store'
+import { useAppSelector } from '@/store/hook'
 import { Customer } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { useEffect, useState } from 'react'
@@ -31,6 +33,9 @@ export const OutstandingPayments = ({
   isOpen,
   onClose
 }: ConfirmationModalProps) => {
+  //
+  const user = useAppSelector((state: RootState) => state.user.user)
+
   const [processing, setProcessing] = useState(false)
   const [orders, setOrders] = useState<DisplayOrder[]>([])
 
@@ -52,6 +57,7 @@ export const OutstandingPayments = ({
           payments:sales_order_payments(amount)
         `
         )
+        .eq('company_id', user?.company_id)
         .eq('payment_status', 'unpaid')
 
       if (error) {
