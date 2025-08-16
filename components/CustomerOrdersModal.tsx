@@ -122,9 +122,8 @@ export const CustomerOrdersModal = ({
                     <tr key={item.id} className="app__tr">
                       {/* Date */}
                       <td className="app__td">
-                        {item.created_at &&
-                        !isNaN(new Date(item.created_at).getTime())
-                          ? format(new Date(item.created_at), 'MMMM dd, yyyy')
+                        {item.date && !isNaN(new Date(item.date).getTime())
+                          ? format(new Date(item.date), 'MMMM dd, yyyy')
                           : 'Invalid date'}
                       </td>
 
