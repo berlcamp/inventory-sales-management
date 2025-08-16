@@ -50,6 +50,7 @@ export const List = ({}) => {
   const [modalPaymentOpen, setModalPaymentOpen] = useState(false)
   const [modalViewProductsOpen, setModalViewProductsOpen] = useState(false)
   const [modalMarkCompleteOpen, setModalMarkCompleteOpen] = useState(false)
+  const [modalMarkApproveOpen, setModalMarkApproveOpen] = useState(false)
   const [modalLogsOpen, setModalLogsOpen] = useState(false)
   const [modalCustomerOpen, setModalCustomerOpen] = useState(false)
 
@@ -89,8 +90,43 @@ export const List = ({}) => {
     setSelectedItem(item)
     setModalMarkCompleteOpen(true)
   }
+  const handleMarkApprovedConfirmation = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalMarkApproveOpen(true)
+  }
 
   const handleMarkComplete = async () => {
+    if (!selectedItem) return
+
+    setSaving(true)
+
+    await supabase
+      .from('sales_orders')
+      .update({ status: 'completed' })
+      .eq('id', selectedItem.id)
+
+    toast.success('Sales Order updated successfully!')
+
+    // Update logs
+    await supabase.from('product_change_logs').insert({
+      sales_order_id: selectedItem.id,
+      user_id: user?.system_user_id,
+      user_name: user?.name,
+      message: `updated status to Complete`
+    })
+
+    // Update Redux state
+    dispatch(
+      updateList({
+        ...selectedItem,
+        status: 'completed',
+        id: selectedItem.id
+      })
+    )
+    setModalMarkCompleteOpen(false)
+    setSaving(false)
+  }
+  const handleMarkApprove = async () => {
     if (!selectedItem) return
 
     setSaving(true)
@@ -125,7 +161,7 @@ export const List = ({}) => {
 
     await supabase
       .from('sales_orders')
-      .update({ status: 'completed' })
+      .update({ status: 'approved' })
       .eq('id', selectedItem.id)
 
     toast.success('Sales Order updated successfully!')
@@ -135,7 +171,7 @@ export const List = ({}) => {
       sales_order_id: selectedItem.id,
       user_id: user?.system_user_id,
       user_name: user?.name,
-      message: `updated status to Complete`
+      message: `updated status to Approved`
     })
 
     // Update Redux state
@@ -146,7 +182,7 @@ export const List = ({}) => {
         id: selectedItem.id
       })
     )
-    setModalMarkCompleteOpen(false)
+    setModalMarkApproveOpen(false)
     setSaving(false)
   }
 
@@ -330,7 +366,7 @@ export const List = ({}) => {
               {/* STATUS COLUMN */}
               <td className="app__td">
                 <div className="flex space-x-1">
-                  {item.status === 'reserved' &&
+                  {item.status !== 'completed' &&
                   user?.user_metadata?.sffo_role === 'admin' ? (
                     <Menu as="div" className="relative">
                       <MenuButton
@@ -344,17 +380,32 @@ export const List = ({}) => {
                       <Transition as={Fragment}>
                         <MenuItems className="app__dropdown_items_left">
                           <div className="py-1">
-                            <MenuItem>
-                              <div
-                                onClick={() =>
-                                  handleMarkCompleteConfirmation(item)
-                                }
-                                className="app__dropdown_item"
-                              >
-                                <CheckSquare className="w-4 h-4" />
-                                <span>Mark as Complete</span>
-                              </div>
-                            </MenuItem>
+                            {item.status === 'reserved' && (
+                              <MenuItem>
+                                <div
+                                  onClick={() =>
+                                    handleMarkApprovedConfirmation(item)
+                                  }
+                                  className="app__dropdown_item"
+                                >
+                                  <CheckSquare className="w-4 h-4" />
+                                  <span>Mark as Approved</span>
+                                </div>
+                              </MenuItem>
+                            )}
+                            {item.status === 'approved' && (
+                              <MenuItem>
+                                <div
+                                  onClick={() =>
+                                    handleMarkCompleteConfirmation(item)
+                                  }
+                                  className="app__dropdown_item"
+                                >
+                                  <CheckSquare className="w-4 h-4" />
+                                  <span>Mark as Complete</span>
+                                </div>
+                              </MenuItem>
+                            )}
                           </div>
                         </MenuItems>
                       </Transition>
@@ -363,6 +414,9 @@ export const List = ({}) => {
                     <>
                       {item.status === 'reserved' && (
                         <Badge>{item.status}</Badge>
+                      )}
+                      {item.status === 'approved' && (
+                        <Badge variant="blue">{item.status}</Badge>
                       )}
                       {item.status === 'completed' && (
                         <Badge variant="green">{item.status}</Badge>
@@ -447,7 +501,13 @@ export const List = ({}) => {
         isOpen={modalMarkCompleteOpen}
         onClose={() => setModalMarkCompleteOpen(false)}
         onConfirm={handleMarkComplete}
-        message="This will update the product stocks from the inventory and cannot be undone, are you sure you want to mark this as complete?"
+        message="Are you sure you want to mark this as complete?"
+      />
+      <ConfirmationModal
+        isOpen={modalMarkApproveOpen}
+        onClose={() => setModalMarkApproveOpen(false)}
+        onConfirm={handleMarkApprove}
+        message="This will update the product stocks from the inventory and cannot be undone, are you sure you want to mark this as approved?"
       />
       <AddModal
         isOpen={modalAddOpen}

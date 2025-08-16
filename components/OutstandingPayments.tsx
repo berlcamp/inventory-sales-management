@@ -89,7 +89,7 @@ export const OutstandingPayments = ({
     }
 
     fetchData()
-  }, [isOpen])
+  }, [isOpen, user?.company_id])
 
   if (!isOpen) return null
 

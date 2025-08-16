@@ -44,6 +44,7 @@ import { z } from 'zod'
 const FormSchema = z.object({
   keyword: z.string().optional(),
   payment_status: z.string().optional(),
+  order_status: z.string().optional(),
   customer_id: z.coerce.number().optional()
 })
 type FormType = z.infer<typeof FormSchema>
@@ -51,10 +52,12 @@ type FormType = z.infer<typeof FormSchema>
 export const Filter = ({
   setFilter,
   setFilterPaymentStatus,
+  setFilterOrderStatus,
   setFilterCustomer
 }: {
   setFilter: (filter: string) => void
   setFilterPaymentStatus: (filter: string) => void
+  setFilterOrderStatus: (filter: string) => void
   setFilterCustomer: (cus: string) => void
 }) => {
   // Category dropdown
@@ -68,6 +71,7 @@ export const Filter = ({
     defaultValues: {
       keyword: undefined,
       payment_status: undefined,
+      order_status: undefined,
       customer_id: undefined
     }
   })
@@ -77,16 +81,19 @@ export const Filter = ({
     console.log(data)
     setFilter(data.keyword ?? '')
     setFilterPaymentStatus(data.payment_status ?? '')
+    setFilterOrderStatus(data.order_status ?? '')
     setFilterCustomer(data.customer_id?.toString() ?? '')
   }
 
   const handleReset = () => {
     setFilter('')
     setFilterPaymentStatus('')
+    setFilterOrderStatus('')
     setFilterCustomer('')
     form.reset({
       keyword: undefined,
       payment_status: '',
+      order_status: '',
       customer_id: undefined
     })
   }
@@ -104,13 +111,13 @@ export const Filter = ({
     }
 
     fetchData()
-  }, [])
+  }, [user?.company_id])
 
   return (
     <div className="mt-4">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <FormField
               control={form.control}
               name="keyword"
@@ -198,6 +205,32 @@ export const Filter = ({
                       </Command>
                     </PopoverContent>
                   </Popover>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="order_status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="app__formlabel_standard">
+                    Order Status
+                  </FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value} // <- this ensures the selected value updates dynamically
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Order Status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="reserved">Reserved</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormItem>
               )}
             />

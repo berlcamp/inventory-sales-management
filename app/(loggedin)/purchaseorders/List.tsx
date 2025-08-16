@@ -435,7 +435,7 @@ export const List = ({}) => {
                             <MenuItem>
                               <div
                                 onClick={() => handlePartiallyDelivered(item)}
-                                className="app__dropdown_item"
+                                className="app__dropdown_item hidden"
                               >
                                 <ListChecks className="w-4 h-4" />
                                 <span>Received Partial Delivery</span>

@@ -22,6 +22,7 @@ export default function Page() {
   // Filters
   const [filter, setFilter] = useState('')
   const [filterPaymentStatus, setFilterPaymentStatus] = useState('')
+  const [filterOrderStatus, setFilterOrderStatus] = useState('')
   const [filterCustomer, setFilterCustomer] = useState('')
 
   const dispatch = useAppDispatch()
@@ -53,6 +54,8 @@ export default function Page() {
         query = query.not('payments', 'is', null) // only orders with payments
       } else if (filterPaymentStatus) {
         query = query.eq('payment_status', filterPaymentStatus)
+      } else if (filterOrderStatus) {
+        query = query.eq('status', filterOrderStatus)
       }
 
       const { data, count, error } = await query
@@ -79,6 +82,7 @@ export default function Page() {
     page,
     filter,
     filterPaymentStatus,
+    filterOrderStatus,
     filterCustomer,
     dispatch,
     user?.company_id
@@ -97,6 +101,7 @@ export default function Page() {
         setFilterCustomer={setFilterCustomer}
         setFilter={setFilter}
         setFilterPaymentStatus={setFilterPaymentStatus}
+        setFilterOrderStatus={setFilterOrderStatus}
       />
 
       <div className="mt-4 py-2 text-xs border-t border-gray-200 text-gray-500">

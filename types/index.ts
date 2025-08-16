@@ -172,7 +172,7 @@ export type DiscountType = 'none' | 'per_product' | 'order_wide'
 export interface SalesOrder {
   id: number
   customer_id?: number
-  status: 'draft' | 'completed' | 'reserved'
+  status: 'draft' | 'completed' | 'reserved' | 'approved'
   payment_status: 'unpaid' | 'partial' | 'paid'
   so_number: string
   total_amount: number
