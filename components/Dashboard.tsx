@@ -287,6 +287,7 @@ export default function AdminDashboard() {
       const { data, error } = await supabase
         .from('sales_orders')
         .select('total_amount')
+        .eq('company_id', user?.company_id)
         .neq('payment_status', 'Deposited')
 
       if (error) {

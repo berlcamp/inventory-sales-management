@@ -4,30 +4,15 @@ import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase/client'
 import { RootState } from '@/store'
 import { useAppSelector } from '@/store/hook'
-import { Customer, SalesOrderPayment } from '@/types'
+import { SalesOrder, SalesOrderPayment } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { format } from 'date-fns'
 import { useEffect, useState } from 'react'
+import Php from './Php'
 
 type ConfirmationModalProps = {
   isOpen: boolean
   onClose: () => void
-}
-
-type RawSalesOrder = {
-  id: number
-  so_number: string | null
-  total_amount: number
-  delivery_fee: number | null
-  customer: Customer | null
-  payments: { amount: number | null }[] | null
-}
-
-type DisplayOrder = {
-  id: number
-  so_number: string | null
-  customer_name: string
-  balance: number
 }
 
 export const OutstandingPayments = ({
@@ -38,7 +23,7 @@ export const OutstandingPayments = ({
   const user = useAppSelector((state: RootState) => state.user.user)
 
   const [processing, setProcessing] = useState(false)
-  const [orders, setOrders] = useState<DisplayOrder[]>([])
+  const [orders, setOrders] = useState<SalesOrder[]>([])
   const [history, setHistory] = useState<SalesOrderPayment[]>([])
 
   const [openHistoryOrderId, setOpenHistoryOrderId] = useState<number | null>(
@@ -53,44 +38,19 @@ export const OutstandingPayments = ({
 
       const { data, error } = await supabase
         .from('sales_orders')
-        .select(
-          `
-          id,
-          so_number,
-          total_amount,
-          delivery_fee,
-          customer:customer_id(name),
-          payments:sales_order_payments(amount)
-        `
-        )
+        .select('*,customer:customer_id(name)')
         .eq('company_id', user?.company_id)
-        .eq('payment_status', 'unpaid')
+        .neq('payment_status', 'Deposited')
+        .order('date', { ascending: false })
 
       if (error) {
         console.error('Error fetching orders:', error.message)
         setProcessing(false)
         return
+      } else {
+        setOrders(data)
       }
 
-      const filtered = (data as unknown as RawSalesOrder[])
-        .map((order) => {
-          const totalPaid =
-            order.payments?.reduce((sum, p) => sum + (p.amount || 0), 0) ?? 0
-
-          const totalDue =
-            Number(order.total_amount) + Number(order.delivery_fee ?? 0)
-          const balance = totalDue - totalPaid
-
-          return {
-            id: order.id,
-            so_number: order.so_number,
-            customer_name: order.customer?.name ?? 'Unknown', // fixed here
-            balance: parseFloat(balance.toFixed(2))
-          }
-        })
-        .filter((order) => order.balance > 0)
-
-      setOrders(filtered)
       setProcessing(false)
     }
 
@@ -153,11 +113,11 @@ export const OutstandingPayments = ({
                     className="border rounded-md p-4 shadow-sm bg-gray-100"
                   >
                     <div className="font-medium">
-                      SO#: {order.so_number || 'N/A'} — {order.customer_name}
+                      SO#: {order.so_number || 'N/A'} — {order.customer?.name}
                     </div>
                     <div className="text-sm">
                       Payable Amount: ₱
-                      {order.balance.toLocaleString(undefined, {
+                      {order.total_amount.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                       })}
@@ -175,42 +135,50 @@ export const OutstandingPayments = ({
 
                     {openHistoryOrderId === order.id && (
                       <div className="mt-2">
-                        <table className="w-full text-sm border bg-white">
-                          <thead>
-                            <tr>
-                              <th className="app__th">Date</th>
-                              <th className="app__th">Amount Received</th>
-                              <th className="app__th">Type</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {history?.map((item) => (
-                              <tr key={item.id} className="app__tr">
-                                <td className="app__td">
-                                  {item.date &&
-                                  !isNaN(new Date(item.date).getTime())
-                                    ? format(
-                                        new Date(item.date),
-                                        'MMMM dd, yyyy'
-                                      )
-                                    : 'Invalid date'}
-                                </td>
-                                <td className="app__td">{item.amount}</td>
-                                <td className="app__td">
-                                  {item.type}{' '}
-                                  {item.due_date &&
-                                    `(Due Date: ${item.due_date})`}{' '}
-                                  {item.bank && `(Bank: ${item.bank})`}
-                                </td>
-                              </tr>
-                            ))}
-                            {history.length === 0 && (
+                        {history.length === 0 && (
+                          <div className="w-full text-base border bg-white p-4 font-medium">
+                            No payments received for this customer yet.
+                          </div>
+                        )}
+                        {history.length > 0 && (
+                          <table className="w-full text-sm border bg-white">
+                            <thead>
                               <tr>
-                                <td colSpan={3}></td>
+                                <th className="app__th">Date</th>
+                                <th className="app__th">Amount Received</th>
+                                <th className="app__th">Type</th>
                               </tr>
-                            )}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {history?.map((item) => (
+                                <tr key={item.id} className="app__tr">
+                                  <td className="app__td">
+                                    {item.date &&
+                                    !isNaN(new Date(item.date).getTime())
+                                      ? format(
+                                          new Date(item.date),
+                                          'MMMM dd, yyyy'
+                                        )
+                                      : 'Invalid date'}
+                                  </td>
+                                  <td className="app__td">
+                                    <Php />{' '}
+                                    {item.amount.toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2
+                                    })}
+                                  </td>
+                                  <td className="app__td">
+                                    {item.type}{' '}
+                                    {item.due_date &&
+                                      `(Due Date: ${item.due_date})`}{' '}
+                                    {item.bank && `(Bank: ${item.bank})`}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
                       </div>
                     )}
                   </div>
@@ -220,7 +188,7 @@ export const OutstandingPayments = ({
               <div className="mt-6 text-right text-lg font-semibold">
                 Total Payable: ₱
                 {orders
-                  .reduce((sum, order) => sum + order.balance, 0)
+                  .reduce((sum, order) => sum + order.total_amount, 0)
                   .toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
