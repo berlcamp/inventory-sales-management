@@ -115,13 +115,15 @@ export const List = ({}) => {
 
     // 2. Update order_items: set delivered += to_deliver, to_deliver = 0
     for (const item of products) {
-      const newlyDelivered = item.to_deliver ?? 0
-      const newDeliveredTotal = (item.delivered ?? 0) + newlyDelivered
+      // const newlyDelivered = item.to_deliver ?? 0
+      // const newDeliveredTotal = (item.delivered ?? 0) + newlyDelivered
+      const quantity = item.quantity
 
       const { error: itemError } = await supabase
         .from('purchase_order_items')
         .update({
-          delivered: newDeliveredTotal,
+          // delivered: newDeliveredTotal,
+          delivered: quantity,
           to_deliver: 0
         })
         .eq('id', item.id)
@@ -137,8 +139,8 @@ export const List = ({}) => {
       product_id: item.product_id,
       cost: item.cost,
       selling_price: item.price,
-      quantity: item.to_deliver ?? 0,
-      remaining_quantity: item.to_deliver ?? 0,
+      quantity: item.quantity,
+      remaining_quantity: item.quantity,
       purchase_date: new Date().toISOString().split('T')[0],
       purchase_order_id: purchaseOrderId
     }))
@@ -174,7 +176,7 @@ export const List = ({}) => {
         id: purchaseOrderId,
         order_items: products.map((item) => ({
           ...item,
-          delivered: (item.delivered ?? 0) + (item.to_deliver ?? 0),
+          delivered: item.quantity,
           to_deliver: 0
         }))
       })
