@@ -438,7 +438,7 @@ export const List = ({}) => {
                                 className="app__dropdown_item hidden"
                               >
                                 <ListChecks className="w-4 h-4" />
-                                <span>Received Partial Delivery</span>
+                                <span>Partial Delivery Checklist</span>
                               </div>
                             </MenuItem>
                           </div>

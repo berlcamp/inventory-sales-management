@@ -37,7 +37,7 @@ interface ModalProps {
 }
 
 const FormSchema = z.object({
-  remaining_quantity: z.coerce.number().min(1, 'Remaining quantity is required')
+  remaining_quantity: z.coerce.number().min(0, 'Remaining quantity is required')
 })
 
 export const EditStockModal = ({ isOpen, onClose, editData }: ModalProps) => {
