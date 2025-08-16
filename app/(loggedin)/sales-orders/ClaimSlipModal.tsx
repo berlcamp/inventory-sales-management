@@ -1,5 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Button } from '@/components/ui/button'
+import { RootState } from '@/store'
+import { useAppSelector } from '@/store/hook'
 import { SalesOrder } from '@/types'
 import { Dialog, DialogPanel } from '@headlessui/react'
 import { format } from 'date-fns'
@@ -13,6 +15,8 @@ interface Props {
 
 const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
   const printRef = useRef<HTMLDivElement>(null)
+
+  const user = useAppSelector((state: RootState) => state.user.user)
 
   const handlePrint = () => {
     if (!printRef.current) return
@@ -44,7 +48,19 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
         <DialogPanel className="bg-white max-w-3xl w-full rounded p-6 shadow-xl overflow-y-auto max-h-[90vh]">
           <div ref={printRef} className="text-sm text-black">
             <div className="text-center">
-              <img src="/pgc.png" className="mx-auto w-[60%]" alt="PGC Logo" />
+              {user?.company_id === '1' ? (
+                <img
+                  src="/pgc.png"
+                  className="mx-auto w-[60%]"
+                  alt="PGC Logo"
+                />
+              ) : (
+                <img
+                  src="/cgm.png"
+                  className="mx-auto w-[60%]"
+                  alt="CGM Logo"
+                />
+              )}
             </div>
             <h1 className="text-xl font-bold text-center my-10">Order Slip</h1>
 

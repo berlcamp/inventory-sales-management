@@ -82,7 +82,7 @@ export const SalesModal = ({ isOpen, onClose, productId }: ModalProps) => {
                       {/* Date */}
                       <td className="app__td">
                         {item.sales_order?.created_at &&
-                        !isNaN(new Date(item.sales_order?.created_at).getTime())
+                        !isNaN(new Date(item.sales_order?.date).getTime())
                           ? format(
                               new Date(item.sales_order?.created_at),
                               'MMMM dd, yyyy'

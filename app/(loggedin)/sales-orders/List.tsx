@@ -36,6 +36,7 @@ import { AddPaymentModal } from './AddPaymentModal'
 // import PrintClaimSlip from './PrintClaimSlip'
 import Php from '@/components/Php'
 import ClaimSlipModal from './ClaimSlipModal'
+import { ModifyModal } from './ModifyModal'
 import { ViewProductsModal } from './ViewProductsModal'
 import WithrawalSlipModal from './WithrawalSlipModal'
 
@@ -50,6 +51,7 @@ export const List = ({}) => {
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalAddOpen, setModalAddOpen] = useState(false)
+  const [modalModifyOpen, setModalModifyOpen] = useState(false)
   const [modalPaymentOpen, setModalPaymentOpen] = useState(false)
   const [modalViewProductsOpen, setModalViewProductsOpen] = useState(false)
   const [modalMarkCompleteOpen, setModalMarkCompleteOpen] = useState(false)
@@ -76,6 +78,10 @@ export const List = ({}) => {
   const handleEdit = (item: ItemType) => {
     setSelectedItem(item)
     setModalAddOpen(true)
+  }
+  const handleModify = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalModifyOpen(true)
   }
 
   const handleReceivePayment = (item: ItemType) => {
@@ -333,6 +339,18 @@ export const List = ({}) => {
                               </div>
                             </MenuItem>
                           </>
+                        )}
+                        {(item.status === 'approved' ||
+                          item.status === 'completed') && (
+                          <MenuItem>
+                            <div
+                              onClick={() => handleModify(item)}
+                              className="app__dropdown_item"
+                            >
+                              <PencilIcon className="w-4 h-4" />
+                              <span>Modify</span>
+                            </div>
+                          </MenuItem>
                         )}
                       </div>
                     </MenuItems>
@@ -618,6 +636,13 @@ export const List = ({}) => {
           isOpen={modalLogsOpen}
           salesOrderId={selectedItem.id}
           onClose={() => setModalLogsOpen(false)}
+        />
+      )}
+      {selectedItem && (
+        <ModifyModal
+          isOpen={modalModifyOpen}
+          editData={selectedItem}
+          onClose={() => setModalModifyOpen(false)}
         />
       )}
       {selectedItem && (

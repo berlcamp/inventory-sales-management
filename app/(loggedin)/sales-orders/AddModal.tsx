@@ -986,6 +986,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       </Button>
                     </div>
                   </div>
+
                   <div>
                     <FormField
                       control={form.control}
@@ -1006,6 +1007,11 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                         </FormItem>
                       )}
                     />
+                  </div>
+                </div>
+                <div>
+                  <div>
+                    <div className="flex"></div>
                   </div>
                 </div>
                 <div className="app__modal_dialog_footer">
