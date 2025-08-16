@@ -28,7 +28,7 @@ export const SalesModal = ({ isOpen, onClose, productId }: ModalProps) => {
         .from('sales_order_items')
         .select('*,sales_order:sales_order_id(*,customer:customer_id(*))')
         .eq('product_id', productId)
-        .order('id', { ascending: false })
+        .order('date', { ascending: false })
       setSales(data)
     }
 
@@ -81,10 +81,10 @@ export const SalesModal = ({ isOpen, onClose, productId }: ModalProps) => {
                     <tr key={item.id} className="app__tr">
                       {/* Date */}
                       <td className="app__td">
-                        {item.sales_order?.created_at &&
+                        {item.sales_order?.date &&
                         !isNaN(new Date(item.sales_order?.date).getTime())
                           ? format(
-                              new Date(item.sales_order?.created_at),
+                              new Date(item.sales_order?.date),
                               'MMMM dd, yyyy'
                             )
                           : 'Invalid date'}
