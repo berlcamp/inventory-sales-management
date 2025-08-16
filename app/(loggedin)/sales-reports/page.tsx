@@ -40,7 +40,7 @@ export default function Page() {
         )
         .eq('company_id', user?.company_id)
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
-        .order('id', { ascending: false })
+        .order('date', { ascending: false })
         .eq('status', 'completed')
 
       if (filterCustomer !== '') {

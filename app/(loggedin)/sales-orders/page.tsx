@@ -43,7 +43,7 @@ export default function Page() {
         )
         .eq('company_id', user?.company_id)
         .ilike('so_number', `%${filter}%`)
-        .order('id', { ascending: false })
+        .order('date', { ascending: false })
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
 
       if (filterCustomer !== '') {
