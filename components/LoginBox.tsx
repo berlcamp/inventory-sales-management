@@ -1,11 +1,15 @@
 'use client'
 
 import { supabase } from '@/lib/supabase/client'
+import { RootState } from '@/store'
+import { useAppSelector } from '@/store/hook'
 import Image from 'next/image'
 import { useState } from 'react'
 
 export default function LoginBox({ message }: { message?: string }) {
   const [error, setError] = useState('')
+
+  const user = useAppSelector((state: RootState) => state.user.user)
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -35,10 +39,10 @@ export default function LoginBox({ message }: { message?: string }) {
         <h1 className="text-2xl font-semibold text-gray-900">
           Sales & Inventory Tracker
         </h1>
-        {process.env.NEXT_PUBLIC_COMPANY_ID === '1' && (
+        {user?.company_id === '1' && (
           <h1 className="text-3xl font-bold text-blue-900">HARDWARE</h1>
         )}
-        {process.env.NEXT_PUBLIC_COMPANY_ID === '2' && (
+        {user?.company_id === '2' && (
           <h1 className="text-3xl font-semibold text-blue-900">CEMENT</h1>
         )}
         <p className="text-sm text-gray-600">

@@ -14,6 +14,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
+      // ✅ Get companyId from localStorage
+      const companyId = localStorage.getItem('company_id') || '1'
+
       const { data } = await supabase.auth.getSession()
       const user = data.session?.user
 
@@ -39,7 +42,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
           setUser({
             ...user,
             system_user_id: systemUser.id,
-            name: systemUser.name
+            name: systemUser.name,
+            company_id: companyId
           })
         )
       }

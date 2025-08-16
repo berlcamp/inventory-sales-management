@@ -10,6 +10,8 @@ import {
   CardTitle
 } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase/client'
+import { RootState } from '@/store'
+import { useAppSelector } from '@/store/hook'
 import { SalesOrderItem } from '@/types'
 import { format, parseISO, startOfWeek } from 'date-fns'
 import { useEffect, useState } from 'react'
@@ -33,7 +35,6 @@ import { Input } from './ui/input'
 interface LowStockProductType {
   name: string
   current_quantity: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   category: any
 }
 
@@ -72,6 +73,8 @@ export default function AdminDashboard() {
   const [dateFrom, setDateFrom] = useState(todayStr)
   const [dateTo, setDateTo] = useState(todayStr)
 
+  const user = useAppSelector((state: RootState) => state.user.user)
+
   useEffect(() => {
     const fetchMetrics = async () => {
       const today = new Date().toISOString().split('T')[0]
@@ -93,33 +96,33 @@ export default function AdminDashboard() {
         supabase
           .from('product_stocks')
           .select('quantity, cost, selling_price, remaining_quantity, missing')
-          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID),
+          .eq('company_id', user?.company_id),
 
         supabase
           .from('sales_orders')
           .select('total_amount')
-          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+          .eq('company_id', user?.company_id)
           .gte('date', from)
           .lte('date', to), // ✅ Chart
 
         supabase
           .from('sales_orders')
           .select('date, total_amount')
-          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID),
+          .eq('company_id', user?.company_id),
         // .gte('date', from)
         // .lte('date', to), // ✅ Chart
 
         supabase
           .from('sales_orders')
           .select('total_amount')
-          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID),
+          .eq('company_id', user?.company_id),
         // .gte('date', from)
         // .lte('date', to), // ✅ Sales total
 
         supabase
           .from('purchase_orders')
           .select('total_amount')
-          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+          .eq('company_id', user?.company_id)
           .neq('status', 'draft'),
         // .gte('date', from)
         // .lte('date', to), // ✅ Purchases
@@ -127,13 +130,13 @@ export default function AdminDashboard() {
         supabase
           .from('products')
           .select('name, current_quantity, category:category_id(name)')
-          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+          .eq('company_id', user?.company_id)
           .lt('current_quantity', 10),
 
         supabase
           .from('sales_orders')
           .select('customer_id, total_amount, customer:customer_id(name)')
-          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID),
+          .eq('company_id', user?.company_id),
         // .gte('date', from)
         // .lte('date', to), // ✅ Top customers
 
@@ -142,7 +145,7 @@ export default function AdminDashboard() {
           .select(
             '*, product_stock:product_stock_id(id, product_id, product:product_id(name))'
           )
-          .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+          .eq('company_id', user?.company_id)
       ])
 
       // Sales charts
@@ -283,7 +286,7 @@ export default function AdminDashboard() {
     }
 
     fetchMetrics()
-  }, [dateFrom, dateTo])
+  }, [dateFrom, dateTo, user?.company_id])
 
   const displayedProducts = showAllLowStock
     ? metrics?.lowStockProducts
@@ -425,7 +428,7 @@ export default function AdminDashboard() {
 
       <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
         <CardHeader>
-          <CardTitle>Outstanding Payments</CardTitle>
+          <CardTitle>Account Receivable</CardTitle>
           <CardDescription>
             <span>Collectable on Sales Orders </span>
           </CardDescription>

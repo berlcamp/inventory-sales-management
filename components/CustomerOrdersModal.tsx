@@ -2,6 +2,8 @@
 'use client'
 
 import { supabase } from '@/lib/supabase/client'
+import { RootState } from '@/store'
+import { useAppSelector } from '@/store/hook'
 import { SalesOrder, SalesOrderItem } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { format } from 'date-fns'
@@ -29,12 +31,14 @@ export const CustomerOrdersModal = ({
   const [logs, setLogs] = useState<SalesOrder[] | null>([])
   const [runningTotal, setRunningTotal] = useState(0)
 
+  const user = useAppSelector((state: RootState) => state.user.user)
+
   useEffect(() => {
     const initForm = async () => {
       const { data, error } = await supabase
         .from('sales_orders')
         .select('*,order_items:sales_order_items(*,product:product_id(*))')
-        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+        .eq('company_id', user?.company_id)
         .eq('customer_id', customerId)
         .order('id', { ascending: false })
 
@@ -64,7 +68,7 @@ export const CustomerOrdersModal = ({
     if (isOpen) {
       initForm()
     }
-  }, [customerId, isOpen])
+  }, [customerId, isOpen, user?.company_id])
 
   return (
     <Dialog
@@ -108,12 +112,15 @@ export const CustomerOrdersModal = ({
                     <th className="app__th">Date</th>
                     <th className="app__th">SO Number</th>
                     <th className="app__th">Products</th>
+                    <th className="app__th text-right">Quantity</th>
+                    <th className="app__th text-right">Price</th>
                     <th className="app__th text-right">Total Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {logs?.map((item: ItemType) => (
                     <tr key={item.id} className="app__tr">
+                      {/* Date */}
                       <td className="app__td">
                         {item.created_at &&
                         !isNaN(new Date(item.created_at).getTime())
@@ -121,29 +128,48 @@ export const CustomerOrdersModal = ({
                           : 'Invalid date'}
                       </td>
 
+                      {/* SO Number */}
                       <td className="app__td">
                         <span className="font-bold">{item.so_number}</span>
                       </td>
 
+                      {/* Products */}
                       <td className="app__td">
                         {item.order_items.length > 0 &&
                           item.order_items.map((oi) => (
-                            <div
-                              key={oi.id}
-                              className="flex justify-between space-x-12 items-center"
-                            >
-                              <span className="">
+                            <div key={oi.id} className="flex items-center">
+                              <span>
                                 {oi.product?.name?.length > 70
                                   ? oi.product.name.slice(0, 70) + '…'
                                   : oi.product?.name}
-                              </span>
-                              <span className="whitespace-nowrap">
-                                ({oi.quantity} x <Php /> {oi.unit_price})
                               </span>
                             </div>
                           ))}
                       </td>
 
+                      {/* Quantity */}
+                      <td className="app__td text-right">
+                        {item.order_items.length > 0 &&
+                          item.order_items.map((oi) => (
+                            <div key={oi.id}>{oi.quantity}</div>
+                          ))}
+                      </td>
+
+                      {/* Price */}
+                      <td className="app__td text-right">
+                        {item.order_items.length > 0 &&
+                          item.order_items.map((oi) => (
+                            <div key={oi.id}>
+                              <Php />{' '}
+                              {oi.unit_price.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              })}
+                            </div>
+                          ))}
+                      </td>
+
+                      {/* Total Amount */}
                       <td className="app__td text-right">
                         <span className="font-bold">
                           <Php />{' '}
@@ -156,10 +182,60 @@ export const CustomerOrdersModal = ({
                     </tr>
                   ))}
 
+                  {/* Totals Row */}
+                  {logs && logs.length > 0 && (
+                    <tr className="app__tr font-bold bg-gray-50">
+                      <td colSpan={3} className="app__td text-right">
+                        Totals:
+                      </td>
+                      <td className="app__td text-right">
+                        {logs
+                          .reduce(
+                            (sum, item) =>
+                              sum +
+                              item.order_items.reduce(
+                                (s, oi) => s + oi.quantity,
+                                0
+                              ),
+                            0
+                          )
+                          .toLocaleString(undefined, {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2
+                          })}
+                      </td>
+                      <td className="app__td text-right">
+                        <Php />{' '}
+                        {logs
+                          .reduce(
+                            (sum, item) =>
+                              sum +
+                              item.order_items.reduce(
+                                (s, oi) => s + oi.unit_price,
+                                0
+                              ),
+                            0
+                          )
+                          .toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
+                      </td>
+                      <td className="app__td text-right">
+                        <Php />{' '}
+                        {logs
+                          .reduce((sum, item) => sum + item.total_amount, 0)
+                          .toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
+                      </td>
+                    </tr>
+                  )}
                   {logs?.length === 0 && (
                     <tr className="app__tr">
-                      <td colSpan={4} className="app__td text-center">
-                        No change logs found
+                      <td colSpan={6} className="app__td text-center">
+                        No records found
                       </td>
                     </tr>
                   )}

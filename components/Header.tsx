@@ -1,4 +1,6 @@
+// components/Header.tsx
 import { getSupabaseClient } from '@/lib/supabase/server'
+import CompanySwitcher from './CompanySwitcher' // ✅ import switcher
 import ThemeToggle from './ThemeToggle'
 import { Button } from './ui/button'
 
@@ -16,20 +18,18 @@ export async function Header() {
     .single()
 
   return (
-    <header className="fixed px-2 top-0 z-40 w-full bg-gray-700 dark:bg-gray-800  flex items-center  shadow-md h-14">
+    <header className="fixed px-2 top-0 z-40 w-full bg-gray-700 dark:bg-gray-800 flex items-center shadow-md h-14">
       <div className="flex w-full items-center text-gray-300 space-x-4">
         <div className="flex-1">
           <div className="hidden lg:block text-lg font-medium px-4 space-x-2">
             <span>Sales & Inventory Tracker</span>
-            {Number(process.env.NEXT_PUBLIC_COMPANY_ID) === 1 && (
-              <span className="text-blue-500 font-bold">[HARDWARE]</span>
-            )}
-            {Number(process.env.NEXT_PUBLIC_COMPANY_ID) === 2 && (
-              <span className="text-green-500 font-bold">[CEMENT]</span>
-            )}
           </div>
         </div>
+
         <div className="flex items-center text-gray-300 space-x-4">
+          {/* ✅ Company Switcher goes here */}
+          <CompanySwitcher />
+
           {/* Display the user's name */}
           <span>{`Hello, ${userData?.name}`}</span>
 

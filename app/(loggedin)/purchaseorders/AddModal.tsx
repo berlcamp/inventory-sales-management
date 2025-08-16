@@ -133,7 +133,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           remarks: formdata.remarks,
           po_number: formdata.po_number,
           total_amount: total,
-          company_id: process.env.NEXT_PUBLIC_COMPANY_ID
+          company_id: user?.company_id
         }
 
         // Step 1: Delete existing purchase order items
@@ -222,7 +222,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           remarks: formdata.remarks,
           status: 'draft',
           payment_status: 'unpaid',
-          company_id: process.env.NEXT_PUBLIC_COMPANY_ID
+          company_id: user?.company_id
         }
 
         // If adding a new PO
@@ -301,40 +301,40 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     }
   }
 
-  async function generatePONumber() {
-    const fullYear = new Date().getFullYear()
-    const shortYear = String(fullYear).slice(-2) // "25"
+  // async function generatePONumber() {
+  //   const fullYear = new Date().getFullYear()
+  //   const shortYear = String(fullYear).slice(-2) // "25"
 
-    const prefix = `PO-HDW-${shortYear}`
+  //   const prefix = `PO-HDW-${shortYear}`
 
-    // Match like "PO-HDW-25%"
-    const { data, error } = await supabase
-      .from('purchase_orders')
-      .select('po_number')
-      .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
-      .ilike('po_number', `${prefix}%`)
-      .order('po_number', { ascending: false })
-      .limit(1)
+  //   // Match like "PO-HDW-25%"
+  //   const { data, error } = await supabase
+  //     .from('purchase_orders')
+  //     .select('po_number')
+  //     .eq('company_id', user?.company_id)
+  //     .ilike('po_number', `${prefix}%`)
+  //     .order('po_number', { ascending: false })
+  //     .limit(1)
 
-    if (error) throw error
+  //   if (error) throw error
 
-    let nextSeries = 1
+  //   let nextSeries = 1
 
-    if (data.length > 0) {
-      const lastPo = data[0].po_number // e.g., "PO-HDW-25010"
-      const lastSeries = parseInt(lastPo.slice(-3), 10) // get last 3 digits
-      nextSeries = lastSeries + 1
-    }
+  //   if (data.length > 0) {
+  //     const lastPo = data[0].po_number // e.g., "PO-HDW-25010"
+  //     const lastSeries = parseInt(lastPo.slice(-3), 10) // get last 3 digits
+  //     nextSeries = lastSeries + 1
+  //   }
 
-    const paddedSeries = String(nextSeries).padStart(3, '0') // 010
-    const newPoNumber = `${prefix}${paddedSeries}` // PO-HDW-25010
+  //   const paddedSeries = String(nextSeries).padStart(3, '0') // 010
+  //   const newPoNumber = `${prefix}${paddedSeries}` // PO-HDW-25010
 
-    return newPoNumber
-  }
+  //   return newPoNumber
+  // }
 
   useEffect(() => {
     const initForm = async () => {
-      const poNumber = editData ? editData.po_number : await generatePONumber()
+      const poNumber = editData ? editData.po_number : ''
 
       form.reset({
         date: editData ? editData.date : '',
@@ -369,13 +369,13 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       const { data } = await supabase
         .from('products')
         .select('*')
-        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+        .eq('company_id', user?.company_id)
         .order('name', { ascending: true })
 
       const { data: suppliersData } = await supabase
         .from('suppliers')
         .select('*')
-        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+        .eq('company_id', user?.company_id)
         .order('name', { ascending: true })
 
       setProductsList(data)
@@ -383,7 +383,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     }
 
     fetchData()
-  }, [])
+  }, [user?.company_id])
 
   const calculateTotal = (index: number) => {
     const quantity = form.getValues(`products.${index}.quantity`)

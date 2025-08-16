@@ -146,7 +146,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           delivery_fee: formdata.delivery_fee,
           po_number: formdata.po_number ?? '',
           so_number: formdata.so_number ?? '',
-          company_id: process.env.NEXT_PUBLIC_COMPANY_ID
+          company_id: user?.company_id
         }
 
         // Step 1: Delete existing sales order items
@@ -181,7 +181,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             quantity: product.quantity,
             total: product.total,
             product_id: product.product_id,
-            company_id: process.env.NEXT_PUBLIC_COMPANY_ID
+            company_id: user?.company_id
           }))
           // for redux
           const salesOrderItemsRedux = formdata.products.map((product) => ({
@@ -240,7 +240,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           total_amount: total,
           status: 'reserved',
           payment_status: 'unpaid',
-          company_id: process.env.NEXT_PUBLIC_COMPANY_ID
+          company_id: user?.company_id
         }
 
         // If adding a new PO
@@ -264,7 +264,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
             quantity: product.quantity,
             total: product.total,
             product_id: product.product_id,
-            company_id: process.env.NEXT_PUBLIC_COMPANY_ID
+            company_id: user?.company_id
           }))
           // for redux
           const salesOrderItemsRedux = formdata.products.map((product) => ({
@@ -329,7 +329,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   //   const { data, error } = await supabase
   //     .from('sales_orders')
   //     .select('so_number')
-  //     .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+  //     .eq('company_id', user?.company_id)
   //     .ilike('so_number', `${prefix}%`)
   //     .order('so_number', { ascending: false })
   //     .limit(1)
@@ -398,7 +398,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       const { data: customersData } = await supabase
         .from('customers')
         .select('*')
-        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+        .eq('company_id', user?.company_id)
         .order('name', { ascending: true })
 
       setProductsList(data)
@@ -406,7 +406,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     }
 
     fetchData()
-  }, [editData, isOpen])
+  }, [editData, isOpen, user?.company_id])
 
   useEffect(() => {
     fields.forEach((item, index) => {

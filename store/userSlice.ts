@@ -5,6 +5,7 @@ import { User } from '@supabase/supabase-js'
 interface ExtendedUser extends User {
   system_user_id?: number
   name?: string
+  company_id?: string
 }
 
 interface UserState {

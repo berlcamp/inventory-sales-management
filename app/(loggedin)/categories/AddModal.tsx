@@ -12,7 +12,8 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase/client'
-import { useAppDispatch } from '@/store/hook'
+import { RootState } from '@/store'
+import { useAppDispatch, useAppSelector } from '@/store/hook'
 import { addItem, updateList } from '@/store/listSlice'
 import { Category } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
@@ -45,6 +46,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const dispatch = useAppDispatch()
 
+  const user = useAppSelector((state: RootState) => state.user.user)
+
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -60,7 +63,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     try {
       const newData = {
         name: data.name,
-        company_id: process.env.NEXT_PUBLIC_COMPANY_ID
+        company_id: user?.company_id
       }
 
       // If exists (editing), update it

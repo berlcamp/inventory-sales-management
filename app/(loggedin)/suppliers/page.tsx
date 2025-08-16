@@ -4,7 +4,8 @@ import LoadingSkeleton from '@/components/LoadingSkeleton'
 import { Button } from '@/components/ui/button'
 import { PER_PAGE } from '@/constants'
 import { supabase } from '@/lib/supabase/client'
-import { useAppDispatch } from '@/store/hook'
+import { RootState } from '@/store'
+import { useAppDispatch, useAppSelector } from '@/store/hook'
 import { addList } from '@/store/listSlice' // Make sure this path is correct
 import { useEffect, useState } from 'react'
 import { AddModal } from './AddModal'
@@ -20,6 +21,8 @@ export default function Page() {
 
   const dispatch = useAppDispatch()
 
+  const user = useAppSelector((state: RootState) => state.user.user)
+
   // Fetch data on page load
   useEffect(() => {
     dispatch(addList([])) // Reset the list first on page load
@@ -29,7 +32,7 @@ export default function Page() {
       const { data, count, error } = await supabase
         .from('suppliers')
         .select('*', { count: 'exact' })
-        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+        .eq('company_id', user?.company_id)
         .ilike('name', `%${filter}%`)
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
         .order('id', { ascending: false })
@@ -45,7 +48,7 @@ export default function Page() {
     }
 
     fetchData()
-  }, [page, filter, dispatch]) // Add `dispatch` to dependency array
+  }, [page, filter, dispatch, user?.company_id]) // Add `dispatch` to dependency array
 
   return (
     <div>
@@ -83,7 +86,9 @@ export default function Page() {
         >
           Previous
         </Button>
-        <p>Page {page}</p>
+        <p>
+          Page {page} of {Math.ceil(totalCount / PER_PAGE)}
+        </p>
         <Button
           size="xs"
           onClick={() => setPage(page + 1)}

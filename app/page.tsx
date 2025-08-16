@@ -3,15 +3,25 @@
 import AdminDashboard from '@/components/Dashboard'
 import { supabase } from '@/lib/supabase/client'
 import Image from 'next/image'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSession, setIsSession] = useState(false)
+  const [error, setError] = useState('')
 
   const router = useRouter()
+
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` }
+    })
+    if (error) {
+      setError(error.message)
+    }
+  }
 
   useEffect(() => {
     const checkSession = async () => {
@@ -49,47 +59,23 @@ export default function Home() {
               Sales & Inventory Tracker
             </h1>
             <p className="text-sm text-gray-600">
-              To get started, choose system to sign in
+              To get started, sign in with google
             </p>
 
-            <Link href="https://cement.ac23.ph/login">
-              <button
-                disabled={isLoading}
-                className="cursor-pointer w-full space-x-2 border border-gray-300 rounded-md py-2 px-4 flex items-center justify-center text-gray-800 bg-white hover:bg-gray-100 transition disabled:opacity-60"
-              >
-                {/* <Image
-                  src="/icons8-google-100.svg"
-                  alt="Google"
-                  width={20}
-                  height={20}
-                /> */}
-                <span>Login to</span>
-                <span className="font-bold">Cement</span>
-              </button>
-            </Link>
+            {error && <p>{error}</p>}
 
-            {/* Divider */}
-            <div className="flex items-center gap-4 mt-4">
-              <hr className="flex-grow border-gray-200" />
-              <span className="text-xs text-gray-500">or</span>
-              <hr className="flex-grow border-gray-200" />
-            </div>
-
-            <Link href="https://hardware.ac23.ph/login">
-              <button
-                disabled={isLoading}
-                className="cursor-pointer w-full space-x-2 border border-gray-300 rounded-md py-2 px-4 flex items-center justify-center text-gray-800 bg-white hover:bg-gray-100 transition disabled:opacity-60"
-              >
-                {/* <Image
-                  src="/icons8-google-100.svg"
-                  alt="Google"
-                  width={20}
-                  height={20}
-                /> */}
-                <span>Login to</span>
-                <span className="font-bold">Hardware</span>
-              </button>
-            </Link>
+            <button
+              onClick={handleGoogleLogin}
+              className="w-full cursor-pointer  font-semibold space-x-2 border border-gray-300 rounded-md py-2 px-4 flex items-center justify-center text-gray-800 bg-white hover:bg-gray-100 transition disabled:opacity-60"
+            >
+              <Image
+                src="/icons8-google-100.svg"
+                alt="Google"
+                width={20}
+                height={20}
+              />
+              <span>Login with Google</span>
+            </button>
           </div>
         </main>
       )

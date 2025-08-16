@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// components/AddItemTypeModal.tsx
+// components/AddItemTypeModal.tsxf
 'use client'
 
 import { Button } from '@/components/ui/button'
@@ -68,6 +67,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
   const list = useAppSelector((state: RootState) => state.list.value)
 
+  const user = useAppSelector((state: RootState) => state.user.user)
+
   // Category dropdown
   const [open, setOpen] = useState(false)
 
@@ -90,7 +91,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         name: data.name,
         unit: data.unit,
         category_id: data.category_id,
-        company_id: process.env.NEXT_PUBLIC_COMPANY_ID
+        company_id: user?.company_id
       }
 
       if (editData?.id) {
@@ -209,7 +210,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       const { data } = await supabase
         .from('categories')
         .select('*')
-        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+        .eq('company_id', user?.company_id)
         .order('name', { ascending: true })
 
       setCategories(data)
@@ -217,7 +218,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
     console.log('categories fetched from modal')
     fetchData()
-  }, [])
+  }, [user?.company_id])
 
   return (
     <Dialog

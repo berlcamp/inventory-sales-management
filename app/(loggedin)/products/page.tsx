@@ -3,7 +3,8 @@
 import LoadingSkeleton from '@/components/LoadingSkeleton'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase/client'
-import { useAppDispatch } from '@/store/hook'
+import { RootState } from '@/store'
+import { useAppDispatch, useAppSelector } from '@/store/hook'
 import { addList } from '@/store/listSlice' // Make sure this path is correct
 import { useEffect, useState } from 'react'
 import { AddModal } from './AddModal'
@@ -15,6 +16,8 @@ export default function Page() {
   const [loading, setLoading] = useState(false)
 
   const dispatch = useAppDispatch()
+
+  const user = useAppSelector((state: RootState) => state.user.user)
 
   // Fetch on page load
   useEffect(() => {
@@ -29,7 +32,7 @@ export default function Page() {
         .select('*,products(*,stocks:product_stocks(*))', {
           count: 'exact'
         })
-        .eq('company_id', process.env.NEXT_PUBLIC_COMPANY_ID)
+        .eq('company_id', user?.company_id)
         .order('name', { ascending: false })
 
       if (error) {
@@ -51,7 +54,7 @@ export default function Page() {
     }
 
     fetchData()
-  }, [dispatch]) // Add `dispatch` to dependency array
+  }, [dispatch, user?.company_id]) // Add `dispatch` to dependency array
 
   return (
     <div>
