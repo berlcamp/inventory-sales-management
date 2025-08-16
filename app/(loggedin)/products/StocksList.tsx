@@ -10,6 +10,7 @@ import { ProductStock, RootState } from '@/types' // Import the RootState type
 import { format } from 'date-fns'
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
+import { EditStockModal } from './EditStockModal'
 import { MissingModal } from './MissingModal'
 import { PriceModal } from './PriceModal'
 
@@ -23,11 +24,16 @@ export const StocksList = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalAddOpen, setModalAddOpen] = useState(false)
+  const [editStockOpen, setEditStockOpen] = useState(false)
   const [modalLogsOpen, setModalLogsOpen] = useState(false)
   const [modalMissingOpen, setModalMissingOpen] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
 
+  const handleEditStock = (item: ItemType) => {
+    setSelectedItem(item)
+    setEditStockOpen(true)
+  }
   const handleEdit = (item: ItemType) => {
     setSelectedItem(item)
     setModalAddOpen(true)
@@ -137,6 +143,15 @@ export const StocksList = () => {
                   </div>
                   <div>|</div>
                   <div
+                    onClick={() => handleEditStock(item)}
+                    className="cursor-pointer"
+                  >
+                    <span className="text-blue-800 text-nowrap">
+                      Update Remaining Stocks
+                    </span>
+                  </div>
+                  <div>|</div>
+                  <div
                     onClick={() => handleAddMissing(item)}
                     className="cursor-pointer"
                   >
@@ -166,6 +181,16 @@ export const StocksList = () => {
       />
 
       <PriceModal
+        isOpen={modalAddOpen}
+        editData={selectedItem}
+        onClose={() => setModalAddOpen(false)}
+      />
+      <EditStockModal
+        isOpen={editStockOpen}
+        editData={selectedItem}
+        onClose={() => setEditStockOpen(false)}
+      />
+      <EditStockModal
         isOpen={modalAddOpen}
         editData={selectedItem}
         onClose={() => setModalAddOpen(false)}

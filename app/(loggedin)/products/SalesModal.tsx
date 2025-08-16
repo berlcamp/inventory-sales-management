@@ -1,6 +1,7 @@
 // components/AddItemTypeModal.tsx
 'use client'
 
+import Php from '@/components/Php'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase/client'
 import { SalesOrderItem } from '@/types'
@@ -51,7 +52,7 @@ export const SalesModal = ({ isOpen, onClose, productId }: ModalProps) => {
 
       {/* Centered panel container */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPanel transition className="app__modal_dialog_panel_sm">
+        <DialogPanel transition className="app__modal_dialog_panel">
           {/* Sticky Header */}
           <div className="app__modal_dialog_title_container">
             <DialogTitle as="h3" className="text-base font-medium flex-1">
@@ -78,6 +79,7 @@ export const SalesModal = ({ isOpen, onClose, productId }: ModalProps) => {
                 <tbody>
                   {sales?.map((item: ItemType) => (
                     <tr key={item.id} className="app__tr">
+                      {/* Date */}
                       <td className="app__td">
                         {item.sales_order?.created_at &&
                         !isNaN(new Date(item.sales_order?.created_at).getTime())
@@ -87,21 +89,80 @@ export const SalesModal = ({ isOpen, onClose, productId }: ModalProps) => {
                             )
                           : 'Invalid date'}
                       </td>
+
+                      {/* Customer */}
                       <td className="app__td">
                         <span className="font-bold">
                           {item.sales_order?.customer?.name}
                         </span>
                       </td>
+
+                      {/* SO Number */}
                       <td className="app__td">{item.sales_order?.so_number}</td>
-                      <td className="app__td">{item.unit_price}</td>
+
+                      {/* Unit Price */}
+                      <td className="app__td">
+                        <Php />{' '}
+                        {item.unit_price?.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
+                      </td>
+
+                      {/* Quantity */}
                       <td className="app__td">{item.quantity}</td>
-                      <td className="app__td">{item.total}</td>
+
+                      {/* Total */}
+                      <td className="app__td">
+                        <Php />{' '}
+                        {item.total?.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
+                      </td>
                     </tr>
                   ))}
+
                   {sales?.length === 0 && (
                     <tr className="app__tr">
-                      <td colSpan={3} className="app__td">
+                      <td colSpan={6} className="app__td text-center">
                         No sales records found
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* Totals Row */}
+                  {sales && sales.length > 0 && (
+                    <tr className="app__tr font-bold bg-gray-50">
+                      <td colSpan={3} className="app__td text-right">
+                        Totals:
+                      </td>
+                      <td className="app__td">
+                        <Php />{' '}
+                        {sales
+                          .reduce(
+                            (sum, item) => sum + (item.unit_price ?? 0),
+                            0
+                          )
+                          .toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
+                      </td>
+                      <td className="app__td">
+                        {sales.reduce(
+                          (sum, item) => sum + (item.quantity ?? 0),
+                          0
+                        )}
+                      </td>
+                      <td className="app__td">
+                        <Php />{' '}
+                        {sales
+                          .reduce((sum, item) => sum + (item.total ?? 0), 0)
+                          .toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
                       </td>
                     </tr>
                   )}

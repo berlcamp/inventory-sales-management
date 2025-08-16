@@ -57,7 +57,7 @@ export const StocksModal = ({ editData, onClose, isOpen }: ModalProps) => {
 
       {/* Centered panel container */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPanel transition className="app__modal_dialog_panel">
+        <DialogPanel transition className="app__modal_dialog_panel_lg">
           {/* Sticky Header */}
           <div className="app__modal_dialog_title_container">
             <DialogTitle as="h3" className="text-base font-medium flex-1">
