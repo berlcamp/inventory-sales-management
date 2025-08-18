@@ -26,9 +26,18 @@ export const SalesModal = ({ isOpen, onClose, productId }: ModalProps) => {
     const initForm = async () => {
       const { data } = await supabase
         .from('sales_order_items')
-        .select('*,sales_order:sales_order_id(*,customer:customer_id(*))')
+        .select(
+          `
+    *,
+    sales_order:sales_order_id(
+      *,
+      customer:customer_id(*)
+    )
+  `
+        )
         .eq('product_id', productId)
-        .order('date', { ascending: false })
+      // .order('date', { foreignTable: 'sales_order', ascending: false }) // ✅ sort by sales_orders.date
+
       setSales(data)
     }
 

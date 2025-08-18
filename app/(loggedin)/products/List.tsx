@@ -1,7 +1,11 @@
 'use client'
 import { ConfirmationModal } from '@/components/ConfirmationModal'
 import { ProductLogsModal } from '@/components/ProductLogsModal'
-import { countAllStocks, countAvailableStocks } from '@/lib/helpers'
+import {
+  countAllStocks,
+  countAvailableStocks,
+  countMissingStocks
+} from '@/lib/helpers'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { updateList } from '@/store/listSlice'
@@ -231,12 +235,20 @@ export const List = ({}) => {
                     <td className="app__td">{item.category?.name}</td>
                     <td className="app__td">
                       {item.stocks && (
-                        <div>
-                          <span className="font-bold text-lg">
-                            {countAvailableStocks(item.stocks)}
-                          </span>{' '}
-                          <span>out of </span>
-                          <span>{countAllStocks(item.stocks)}</span>
+                        <div className="flex space-x-4 justify-between pr-10">
+                          <div>
+                            <span className="font-bold text-lg">
+                              {countAvailableStocks(item.stocks)}
+                            </span>{' '}
+                            <span>out of </span>
+                            <span>{countAllStocks(item.stocks)}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-gray-600">
+                              [Missing:{' '}
+                              <span>{countMissingStocks(item.stocks)}</span>]
+                            </span>
+                          </div>
                         </div>
                       )}
                     </td>

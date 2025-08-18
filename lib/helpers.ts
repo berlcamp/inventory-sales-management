@@ -3,6 +3,9 @@ import { ProductStock, SalesOrderPayment } from '@/types'
 export const countAvailableStocks = (stocks: ProductStock[]): number => {
   return stocks.reduce((total, stock) => total + stock.remaining_quantity, 0)
 }
+export const countMissingStocks = (stocks: ProductStock[]): number => {
+  return stocks.reduce((total, stock) => total + stock.missing, 0)
+}
 
 export const countAllStocks = (stocks: ProductStock[]): number => {
   return stocks.reduce((total, stock) => total + stock.quantity, 0)
