@@ -35,6 +35,7 @@ export default function Page() {
           '*,supplier:supplier_id(*),payments:purchase_payments(*),order_items:purchase_order_items(*,product:product_id(*))',
           { count: 'exact' }
         )
+        .neq('id', 29) // Used for exist inventory
         .eq('company_id', user?.company_id)
         .ilike('po_number', `%${filter}%`)
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)

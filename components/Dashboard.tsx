@@ -123,6 +123,7 @@ export default function AdminDashboard() {
           .from('purchase_orders')
           .select('total_amount')
           .eq('company_id', user?.company_id)
+          .neq('id', 29) // Used for exist inventory
           .neq('status', 'draft'),
         // .gte('date', from)
         // .lte('date', to), // ✅ Purchases

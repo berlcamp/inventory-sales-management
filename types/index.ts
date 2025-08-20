@@ -43,6 +43,8 @@ export interface Product {
   name: string
   unit: string
   sku?: string
+  price: number
+  exist: boolean
   description?: string
   current_cost: number
   current_price: number

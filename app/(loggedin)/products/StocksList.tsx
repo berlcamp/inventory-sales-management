@@ -190,11 +190,6 @@ export const StocksList = () => {
         editData={selectedItem}
         onClose={() => setEditStockOpen(false)}
       />
-      <EditStockModal
-        isOpen={modalAddOpen}
-        editData={selectedItem}
-        onClose={() => setModalAddOpen(false)}
-      />
       {selectedItem && (
         <ProductLogsModal
           isOpen={modalLogsOpen}
