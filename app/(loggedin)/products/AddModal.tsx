@@ -88,7 +88,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
     try {
       const newData = {
-        name: data.name,
+        name: data.name.trim(),
         unit: data.unit,
         category_id: data.category_id,
         company_id: user?.company_id

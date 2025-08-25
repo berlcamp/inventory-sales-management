@@ -179,6 +179,8 @@ export interface SalesOrder {
   so_number: string
   total_amount: number
   delivery_fee: number
+  other_charges: string
+  other_charges_amount: number
   discount_type: DiscountType
   discount_value: number
   created_at?: string

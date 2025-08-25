@@ -37,6 +37,7 @@ import { AddPaymentModal } from './AddPaymentModal'
 import Php from '@/components/Php'
 import ClaimSlipModal from './ClaimSlipModal'
 import { ModifyModal } from './ModifyModal'
+import { OtherChargesModal } from './OtherChargesModal'
 import { ViewProductsModal } from './ViewProductsModal'
 import WithrawalSlipModal from './WithrawalSlipModal'
 
@@ -60,7 +61,7 @@ export const List = ({}) => {
   const [modalCustomerOpen, setModalCustomerOpen] = useState(false)
   const [modalConfirmChangeStatus, setModalConfirmChangeStatus] =
     useState(false)
-
+  const [modalOtherChargesOpen, setModalOtherChargesOpen] = useState(false)
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
   const [isPrintWSModalOpen, setIsPrintWSModalOpen] = useState(false)
 
@@ -77,7 +78,15 @@ export const List = ({}) => {
 
   const handleEdit = (item: ItemType) => {
     setSelectedItem(item)
-    setModalAddOpen(true)
+    if (item.other_charges) {
+      void handleEditOtherCharges(item)
+    } else {
+      setModalAddOpen(true)
+    }
+  }
+  const handleEditOtherCharges = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalOtherChargesOpen(true)
   }
   const handleModify = (item: ItemType) => {
     setSelectedItem(item)
@@ -176,8 +185,40 @@ export const List = ({}) => {
     setModalMarkCompleteOpen(false)
     setSaving(false)
   }
+
   const handleMarkApprove = async () => {
     if (!selectedItem) return
+
+    if (selectedItem.other_charges) {
+      setSaving(true)
+      await supabase
+        .from('sales_orders')
+        .update({ status: 'approved' })
+        .eq('id', selectedItem.id)
+
+      toast.success('Sales Order updated successfully!')
+
+      // Update logs
+      await supabase.from('product_change_logs').insert({
+        sales_order_id: selectedItem.id,
+        user_id: user?.system_user_id,
+        user_name: user?.name,
+        message: `updated status to Approved`
+      })
+
+      // Update Redux state
+      dispatch(
+        updateList({
+          ...selectedItem,
+          status: 'approved',
+          id: selectedItem.id
+        })
+      )
+      setModalMarkApproveOpen(false)
+      setSaving(false)
+
+      return
+    }
 
     setSaving(true)
 
@@ -228,7 +269,7 @@ export const List = ({}) => {
     dispatch(
       updateList({
         ...selectedItem,
-        status: 'completed',
+        status: 'approved',
         id: selectedItem.id
       })
     )
@@ -304,20 +345,21 @@ export const List = ({}) => {
                   <Transition as={Fragment}>
                     <MenuItems className="app__dropdown_items">
                       <div className="py-1">
-                        {(item.status === 'reserved' ||
-                          item.status === 'completed') && (
-                          <>
-                            <MenuItem>
-                              <div
-                                onClick={() => handleViewProducts(item)}
-                                className="app__dropdown_item"
-                              >
-                                <EyeIcon className="w-4 h-4" />
-                                <span>View Products</span>
-                              </div>
-                            </MenuItem>
-                          </>
-                        )}
+                        {!item.other_charges &&
+                          (item.status === 'reserved' ||
+                            item.status === 'completed') && (
+                            <>
+                              <MenuItem>
+                                <div
+                                  onClick={() => handleViewProducts(item)}
+                                  className="app__dropdown_item"
+                                >
+                                  <EyeIcon className="w-4 h-4" />
+                                  <span>View Products</span>
+                                </div>
+                              </MenuItem>
+                            </>
+                          )}
                         {item.status === 'reserved' && (
                           <>
                             <MenuItem>
@@ -340,57 +382,69 @@ export const List = ({}) => {
                             </MenuItem>
                           </>
                         )}
-                        {(item.status === 'approved' ||
-                          item.status === 'completed') && (
-                          <MenuItem>
-                            <div
-                              onClick={() => handleModify(item)}
-                              className="app__dropdown_item"
-                            >
-                              <PencilIcon className="w-4 h-4" />
-                              <span>Modify</span>
-                            </div>
-                          </MenuItem>
-                        )}
+                        {!item.other_charges &&
+                          user?.system_user_id === 1 &&
+                          (item.status === 'approved' ||
+                            item.status === 'completed') && (
+                            <MenuItem>
+                              <div
+                                onClick={() => handleModify(item)}
+                                className="app__dropdown_item"
+                              >
+                                <PencilIcon className="w-4 h-4" />
+                                <span>Modify</span>
+                              </div>
+                            </MenuItem>
+                          )}
                       </div>
                     </MenuItems>
                   </Transition>
                 </Menu>
               </td>
               <td className="app__td">
-                <div className="font-bold">{item.so_number}</div>
+                <div className="font-bold">
+                  {item.so_number}{' '}
+                  {item.other_charges && (
+                    <Badge variant="blue">Other Charges</Badge>
+                  )}
+                </div>
                 <div className="text-xs text-gray-500">
                   {item.date && !isNaN(new Date(item.date).getTime())
                     ? format(new Date(item.date), 'MMMM dd, yyyy')
                     : 'Invalid date'}
                 </div>
                 <div className="mt-2 space-x-2">
-                  {(item.status === 'reserved' ||
-                    item.status === 'completed') && (
+                  {!item.other_charges &&
+                    (item.status === 'reserved' ||
+                      item.status === 'completed') && (
+                      <>
+                        <span
+                          className="text-xs text-blue-800 cursor-pointer font-bold"
+                          onClick={() => openClaimSlip(item)}
+                        >
+                          Order Slip
+                        </span>
+                        <span>|</span>
+                        <span
+                          className="text-xs text-blue-800 cursor-pointer font-bold"
+                          onClick={() => openWithrawalSlip(item)}
+                        >
+                          Withdrawal Slip
+                        </span>
+                        <span>|</span>
+                      </>
+                    )}
+                  {!item.other_charges && (
                     <>
                       <span
                         className="text-xs text-blue-800 cursor-pointer font-bold"
-                        onClick={() => openClaimSlip(item)}
+                        onClick={() => handleViewProducts(item)}
                       >
-                        Order Slip
-                      </span>
-                      <span>|</span>
-                      <span
-                        className="text-xs text-blue-800 cursor-pointer font-bold"
-                        onClick={() => openWithrawalSlip(item)}
-                      >
-                        Withdrawal Slip
+                        Products
                       </span>
                       <span>|</span>
                     </>
                   )}
-                  <span
-                    className="text-xs text-blue-800 cursor-pointer font-bold"
-                    onClick={() => handleViewProducts(item)}
-                  >
-                    Products
-                  </span>
-                  <span>|</span>
                   <span
                     className="text-xs text-blue-800 cursor-pointer font-medium"
                     onClick={() => handleLogs(item)}
@@ -433,6 +487,9 @@ export const List = ({}) => {
                     <Menu as="div" className="relative">
                       <MenuButton
                         as={Badge}
+                        variant={
+                          item.status === 'approved' ? 'orange' : 'default'
+                        }
                         className="flex items-center space-x-1 cursor-pointer"
                       >
                         <span>{item.status}</span>
@@ -615,6 +672,11 @@ export const List = ({}) => {
         isOpen={modalAddOpen}
         editData={selectedItem}
         onClose={() => setModalAddOpen(false)}
+      />
+      <OtherChargesModal
+        editData={selectedItem}
+        isOpen={modalOtherChargesOpen}
+        onClose={() => setModalOtherChargesOpen(false)}
       />
       {selectedItem && modalPaymentOpen && (
         <AddPaymentModal

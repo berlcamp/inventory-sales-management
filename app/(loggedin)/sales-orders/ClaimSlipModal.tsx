@@ -104,6 +104,7 @@ const ClaimSlipModal = ({ isOpen, onClose, editData }: Props) => {
                     </tr>
                   )
                 })}
+
                 <tr className="border-b">
                   <td className="border border-black px-1 py-px text-center">
                     &nbsp;

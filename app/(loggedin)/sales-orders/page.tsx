@@ -12,11 +12,13 @@ import { useEffect, useState } from 'react'
 import { AddModal } from './AddModal'
 import { Filter } from './Filter'
 import { List } from './List'
+import { OtherChargesModal } from './OtherChargesModal'
 
 export default function Page() {
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage] = useState(1)
   const [modalAddOpen, setModalAddOpen] = useState(false)
+  const [modalOtherChargesOpen, setModalOtherChargesOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
   // Filters
@@ -92,9 +94,18 @@ export default function Page() {
     <div>
       <div className="app__title">
         <h1 className="text-3xl font-semibold">Sales Orders</h1>
-        <Button onClick={() => setModalAddOpen(true)} className="ml-auto">
-          Create Sales Order
-        </Button>
+        <div className="ml-auto space-x-2">
+          <Button onClick={() => setModalAddOpen(true)} className="ml-auto">
+            Create Sales Order
+          </Button>
+          <Button
+            onClick={() => setModalOtherChargesOpen(true)}
+            className="ml-auto"
+            variant="outline"
+          >
+            Create Other Charges
+          </Button>
+        </div>
       </div>
 
       <Filter
@@ -143,6 +154,10 @@ export default function Page() {
         </div>
       )}
       <AddModal isOpen={modalAddOpen} onClose={() => setModalAddOpen(false)} />
+      <OtherChargesModal
+        isOpen={modalOtherChargesOpen}
+        onClose={() => setModalOtherChargesOpen(false)}
+      />
     </div>
   )
 }
