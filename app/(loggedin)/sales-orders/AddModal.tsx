@@ -648,7 +648,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                                             'text-muted-foreground'
                                         )}
                                       >
-                                        <span className="truncate">
+                                        <span className="truncate w-[350px]">
                                           {field.value
                                             ? (() => {
                                                 const selected =

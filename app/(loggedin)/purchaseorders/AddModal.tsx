@@ -607,7 +607,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                                             'text-muted-foreground'
                                         )}
                                       >
-                                        <span className="truncate">
+                                        <span className="truncate w-[350px]">
                                           {' '}
                                           {/* Truncate the text if it's too long */}
                                           {field.value

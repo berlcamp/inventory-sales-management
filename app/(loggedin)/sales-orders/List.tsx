@@ -345,21 +345,19 @@ export const List = ({}) => {
                   <Transition as={Fragment}>
                     <MenuItems className="app__dropdown_items">
                       <div className="py-1">
-                        {!item.other_charges &&
-                          (item.status === 'reserved' ||
-                            item.status === 'completed') && (
-                            <>
-                              <MenuItem>
-                                <div
-                                  onClick={() => handleViewProducts(item)}
-                                  className="app__dropdown_item"
-                                >
-                                  <EyeIcon className="w-4 h-4" />
-                                  <span>View Products</span>
-                                </div>
-                              </MenuItem>
-                            </>
-                          )}
+                        {!item.other_charges && (
+                          <>
+                            <MenuItem>
+                              <div
+                                onClick={() => handleViewProducts(item)}
+                                className="app__dropdown_item"
+                              >
+                                <EyeIcon className="w-4 h-4" />
+                                <span>View Products</span>
+                              </div>
+                            </MenuItem>
+                          </>
+                        )}
                         {item.status === 'reserved' && (
                           <>
                             <MenuItem>
@@ -415,7 +413,7 @@ export const List = ({}) => {
                 </div>
                 <div className="mt-2 space-x-2">
                   {!item.other_charges &&
-                    (item.status === 'reserved' ||
+                    (item.status === 'approved' ||
                       item.status === 'completed') && (
                       <>
                         <span
@@ -492,7 +490,9 @@ export const List = ({}) => {
                         }
                         className="flex items-center space-x-1 cursor-pointer"
                       >
-                        <span>{item.status}</span>
+                        <span>
+                          {item.status} {item.modified && '& Modified'}
+                        </span>
                         <ChevronDown className="h-4 w-4" />
                       </MenuButton>
 
@@ -535,10 +535,14 @@ export const List = ({}) => {
                         <Badge>{item.status}</Badge>
                       )}
                       {item.status === 'approved' && (
-                        <Badge variant="blue">{item.status}</Badge>
+                        <Badge variant="blue">
+                          {item.status} {item.modified && '& Modified'}
+                        </Badge>
                       )}
                       {item.status === 'completed' && (
-                        <Badge variant="green">{item.status}</Badge>
+                        <Badge variant="green">
+                          {item.status} {item.modified && '& Modified'}
+                        </Badge>
                       )}
                     </>
                   )}
@@ -700,7 +704,7 @@ export const List = ({}) => {
           onClose={() => setModalLogsOpen(false)}
         />
       )}
-      {selectedItem && (
+      {selectedItem && modalModifyOpen && (
         <ModifyModal
           isOpen={modalModifyOpen}
           editData={selectedItem}

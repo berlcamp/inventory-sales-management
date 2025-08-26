@@ -186,6 +186,7 @@ export interface SalesOrder {
   created_at?: string
   completed_at?: string
   date: string
+  modified: boolean
   customer?: Customer
   order_items: SalesOrderItem[]
   po_number: string
@@ -199,6 +200,7 @@ export interface SalesOrderItem {
   product_stock_id: number
   product_stock: ProductStock
   quantity: number
+  original_quantity: number
   unit_price: number
   discount: number
   total: number

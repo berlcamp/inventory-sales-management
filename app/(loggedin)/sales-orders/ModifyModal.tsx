@@ -32,12 +32,16 @@ export const ModifyModal = ({ isOpen, onClose, editData }: ModalProps) => {
   const user = useAppSelector((state: RootState) => state.user.user)
 
   const handleQuantityChange = (index: number, value: number) => {
+    const max =
+      editData.order_items[index].original_quantity ??
+      editData.order_items[index].quantity
+
     setPartialQuantities((prev) =>
       prev.map((item, i) =>
         i === index
           ? {
               ...item,
-              quantity: Math.min(value, editData.order_items[i].quantity)
+              quantity: Math.min(value, max) // clamp against original_quantity
             }
           : item
       )
@@ -45,39 +49,100 @@ export const ModifyModal = ({ isOpen, onClose, editData }: ModalProps) => {
   }
 
   const handleUpdateQuantity = async () => {
-    if (saving) return // ⛔️ Prevent re-entry
+    if (saving) return
     setSaving(true)
 
-    const updatedOrderItems = editData.order_items.map((item, index) => {
-      return {
-        ...item,
-        quantity: partialQuantities[index].quantity
-      }
-    })
+    // 🔹 Build updated list with new quantities
+    const updatedOrderItems = editData.order_items.map((item, index) => ({
+      ...item,
+      quantity: partialQuantities[index].quantity
+    }))
 
-    for (const item of updatedOrderItems) {
-      await supabase
-        .from('purchase_order_items')
-        .update({
-          quanntity: item.quantity
-        })
-        .eq('id', item.id)
+    // 🔹 Check if any change was made
+    const hasChanges = updatedOrderItems.some(
+      (item, i) => item.quantity !== editData.order_items[i].quantity
+    )
+
+    if (!hasChanges) {
+      toast('No changes made.')
+      setSaving(false)
+      onClose()
+      return
     }
 
+    let totalAmount = 0
+
+    for (const item of updatedOrderItems) {
+      // ⛔ Skip if no change in this item
+      const originalItem = editData.order_items.find((o) => o.id === item.id)
+      if (!originalItem || originalItem.quantity === item.quantity) {
+        continue
+      }
+
+      // 🔹 1. Fetch existing row
+      const { data: existing, error: fetchError } = await supabase
+        .from('sales_order_items')
+        .select('logs, original_quantity, quantity, unit_price, discount')
+        .eq('id', item.id)
+        .single()
+
+      if (fetchError) {
+        console.error(fetchError)
+        continue
+      }
+
+      // 🔹 2. Compute total for this item
+      const discount = existing?.discount ?? 0
+      const newTotal = item.quantity * (existing?.unit_price ?? 0) - discount
+
+      totalAmount += newTotal
+
+      // 🔹 3. Create log entry
+      const newLog = {
+        modified_at: new Date().toISOString(),
+        modified_by: user?.id,
+        previous_quantity: existing?.quantity,
+        new_quantity: item.quantity
+      }
+
+      // 🔹 4. Update row
+      const { error: updateError } = await supabase
+        .from('sales_order_items')
+        .update({
+          quantity: item.quantity,
+          original_quantity: existing?.original_quantity ?? existing?.quantity,
+          logs: [...(existing?.logs ?? []), newLog],
+          total: newTotal
+        })
+        .eq('id', item.id)
+
+      if (updateError) {
+        console.error(updateError)
+      }
+    }
+
+    // 🔹 5. Recalculate parent sales_order total_amount
+    const { error: orderUpdateError } = await supabase
+      .from('sales_orders')
+      .update({ total_amount: totalAmount, modified: true })
+      .eq('id', editData.id)
+
+    if (orderUpdateError) {
+      console.error(orderUpdateError)
+    }
+
+    // 🔹 6. Update Redux state
     dispatch(
       updateList({
         ...editData,
-        status,
-        order_items: updatedOrderItems
+        modified: true,
+        order_items: updatedOrderItems.map((item) => ({
+          ...item,
+          total: item.quantity * item.unit_price - (item.discount ?? 0)
+        })),
+        total_amount: totalAmount
       })
     )
-
-    await supabase.from('product_change_logs').insert({
-      sales_order_id: editData.id,
-      user_id: user?.system_user_id,
-      user_name: user?.name,
-      message: `Modified this sales order`
-    })
 
     toast.success('Updated successfully!')
     setSaving(false)
@@ -136,7 +201,7 @@ export const ModifyModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       <Input
                         type="number"
                         min={0}
-                        max={item.quantity}
+                        max={item.original_quantity || item.quantity}
                         value={partialQuantities[index].quantity}
                         onChange={(e) =>
                           handleQuantityChange(index, Number(e.target.value))
