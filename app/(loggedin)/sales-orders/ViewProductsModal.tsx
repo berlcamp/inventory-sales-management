@@ -52,6 +52,9 @@ export const ViewProductsModal = ({
                   <th className="app__th">Price</th>
                   <th className="app__th">Discount</th>
                   <th className="app__th">Total</th>
+                  {editData.modified && (
+                    <th className="app__th">Original Qty before modified</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -77,6 +80,9 @@ export const ViewProductsModal = ({
                         maximumFractionDigits: 2
                       })}
                     </td>
+                    {editData.modified && (
+                      <td className="app__td">{item.original_quantity}</td>
+                    )}
                   </tr>
                 ))}
                 {/* Totals Row */}
