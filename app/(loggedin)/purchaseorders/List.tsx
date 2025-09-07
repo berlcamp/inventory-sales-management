@@ -7,7 +7,7 @@ import { checkPDC } from '@/lib/helpers'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { deleteItem, updateList } from '@/store/listSlice'
-import { PurchaseOrder, RootState } from '@/types' // Import the RootState type
+import { PurchaseOrder, PurchaseOrderItem, RootState } from '@/types' // Import the RootState type
 import {
   Menu,
   MenuButton,
@@ -100,92 +100,200 @@ export const List = ({}) => {
 
     setSaving(true)
 
-    const { id: purchaseOrderId, order_items: products } = selectedItem
-
-    // 1. Mark PO as delivered
-    const { error: updateError } = await supabase
+    const { data: PurchaseOrder, error: PurchaseOrderError } = await supabase
       .from('purchase_orders')
-      .update({ status: 'delivered' })
-      .eq('id', purchaseOrderId)
+      .select('*,order_items:purchase_order_items(*,product:product_id(*))')
+      .eq('id', selectedItem.id)
+      .single()
 
-    if (updateError) {
-      toast.error('Failed to mark as delivered.')
+    if (PurchaseOrderError) {
+      toast.error('Error updating stock')
+      setModalMarkApproveOpen(false)
+      setSaving(false)
       return
-    }
+    } else {
+      const { id: purchaseOrderId, order_items: products } = PurchaseOrder
 
-    // 2. Update order_items: set delivered += to_deliver, to_deliver = 0
-    for (const item of products) {
-      // const newlyDelivered = item.to_deliver ?? 0
-      // const newDeliveredTotal = (item.delivered ?? 0) + newlyDelivered
-      const quantity = item.quantity
+      // 1. Mark PO as delivered
+      const { error: updateError } = await supabase
+        .from('purchase_orders')
+        .update({ status: 'delivered' })
+        .eq('id', purchaseOrderId)
 
-      const { error: itemError } = await supabase
-        .from('purchase_order_items')
-        .update({
-          // delivered: newDeliveredTotal,
-          delivered: quantity,
-          to_deliver: 0
-        })
-        .eq('id', item.id)
-
-      if (itemError) {
-        toast.error(`Failed to update item ${item.product_id}`)
+      if (updateError) {
+        toast.error('Failed to mark as delivered.')
         return
       }
-    }
 
-    // 3. Insert product stock records
-    const stockEntries = products.map((item) => ({
-      product_id: item.product_id,
-      cost: item.cost,
-      selling_price: item.price,
-      quantity: item.quantity,
-      remaining_quantity: item.quantity,
-      purchase_date: new Date().toISOString().split('T')[0],
-      purchase_order_id: purchaseOrderId,
-      company_id: process.env.NEXT_PUBLIC_COMPANY_ID
-    }))
+      // 2. Update order_items: set delivered += to_deliver, to_deliver = 0
+      for (const item of products) {
+        // const newlyDelivered = item.to_deliver ?? 0
+        // const newDeliveredTotal = (item.delivered ?? 0) + newlyDelivered
+        const quantity = item.quantity
 
-    const filteredEntries = stockEntries.filter((item) => item.quantity > 0)
+        const { error: itemError } = await supabase
+          .from('purchase_order_items')
+          .update({
+            // delivered: newDeliveredTotal,
+            delivered: quantity,
+            to_deliver: 0
+          })
+          .eq('id', item.id)
 
-    if (filteredEntries.length > 0) {
-      const { error: stockError } = await supabase
-        .from('product_stocks')
-        .insert(filteredEntries)
-
-      if (stockError) {
-        toast.error('Failed to update product stocks.')
-        return
+        if (itemError) {
+          toast.error(`Failed to update item ${item.product_id}`)
+          return
+        }
       }
-    }
 
-    // 4. Insert log
-    await supabase.from('product_change_logs').insert({
-      po_id: purchaseOrderId,
-      user_id: user?.system_user_id,
-      user_name: user?.name,
-      message: `Marked all items as delivered`
-    })
+      // 3. Insert product stock records
+      const stockEntries = products.map((item: PurchaseOrderItem) => ({
+        product_id: item.product_id,
+        cost: item.cost,
+        selling_price: item.price,
+        quantity: item.quantity,
+        remaining_quantity: item.quantity,
+        purchase_date: new Date().toISOString().split('T')[0],
+        purchase_order_id: purchaseOrderId,
+        company_id: process.env.NEXT_PUBLIC_COMPANY_ID
+      }))
 
-    // 5. Notify and update Redux
-    toast.success('Purchase Order marked as delivered and stocks updated!')
+      const filteredEntries = stockEntries.filter(
+        (item: { quantity: number }) => item.quantity > 0
+      )
 
-    dispatch(
-      updateList({
-        ...selectedItem,
-        status: 'delivered',
-        id: purchaseOrderId,
-        order_items: products.map((item) => ({
-          ...item,
-          delivered: item.quantity,
-          to_deliver: 0
-        }))
+      if (filteredEntries.length > 0) {
+        const { error: stockError } = await supabase
+          .from('product_stocks')
+          .insert(filteredEntries)
+
+        if (stockError) {
+          toast.error('Failed to update product stocks.')
+          return
+        }
+      }
+
+      // 4. Insert log
+      await supabase.from('product_change_logs').insert({
+        po_id: purchaseOrderId,
+        user_id: user?.system_user_id,
+        user_name: user?.name,
+        message: `Marked all items as delivered`
       })
-    )
 
-    setSaving(false)
-    setModalMarkCompleteOpen(false)
+      // 5. Notify and update Redux
+      toast.success('Purchase Order marked as delivered and stocks updated!')
+
+      dispatch(
+        updateList({
+          ...selectedItem,
+          status: 'delivered',
+          id: purchaseOrderId,
+          order_items: products.map((item: PurchaseOrderItem) => ({
+            ...item,
+            delivered: item.quantity,
+            to_deliver: 0
+          }))
+        })
+      )
+
+      setSaving(false)
+      setModalMarkCompleteOpen(false)
+    }
   }
+
+  // const handleMarkComplete = async () => {
+  //   if (!selectedItem) return
+  //   if (saving) return
+
+  //   setSaving(true)
+
+  //   const { id: purchaseOrderId, order_items: products } = selectedItem
+
+  //   // 1. Mark PO as delivered
+  //   const { error: updateError } = await supabase
+  //     .from('purchase_orders')
+  //     .update({ status: 'delivered' })
+  //     .eq('id', purchaseOrderId)
+
+  //   if (updateError) {
+  //     toast.error('Failed to mark as delivered.')
+  //     return
+  //   }
+
+  //   // 2. Update order_items: set delivered += to_deliver, to_deliver = 0
+  //   for (const item of products) {
+  //     // const newlyDelivered = item.to_deliver ?? 0
+  //     // const newDeliveredTotal = (item.delivered ?? 0) + newlyDelivered
+  //     const quantity = item.quantity
+
+  //     const { error: itemError } = await supabase
+  //       .from('purchase_order_items')
+  //       .update({
+  //         // delivered: newDeliveredTotal,
+  //         delivered: quantity,
+  //         to_deliver: 0
+  //       })
+  //       .eq('id', item.id)
+
+  //     if (itemError) {
+  //       toast.error(`Failed to update item ${item.product_id}`)
+  //       return
+  //     }
+  //   }
+
+  //   // 3. Insert product stock records
+  //   const stockEntries = products.map((item) => ({
+  //     product_id: item.product_id,
+  //     cost: item.cost,
+  //     selling_price: item.price,
+  //     quantity: item.quantity,
+  //     remaining_quantity: item.quantity,
+  //     purchase_date: new Date().toISOString().split('T')[0],
+  //     purchase_order_id: purchaseOrderId,
+  //     company_id: process.env.NEXT_PUBLIC_COMPANY_ID
+  //   }))
+
+  //   const filteredEntries = stockEntries.filter((item) => item.quantity > 0)
+
+  //   if (filteredEntries.length > 0) {
+  //     const { error: stockError } = await supabase
+  //       .from('product_stocks')
+  //       .insert(filteredEntries)
+
+  //     if (stockError) {
+  //       toast.error('Failed to update product stocks.')
+  //       return
+  //     }
+  //   }
+
+  //   // 4. Insert log
+  //   await supabase.from('product_change_logs').insert({
+  //     po_id: purchaseOrderId,
+  //     user_id: user?.system_user_id,
+  //     user_name: user?.name,
+  //     message: `Marked all items as delivered`
+  //   })
+
+  //   // 5. Notify and update Redux
+  //   toast.success('Purchase Order marked as delivered and stocks updated!')
+
+  //   dispatch(
+  //     updateList({
+  //       ...selectedItem,
+  //       status: 'delivered',
+  //       id: purchaseOrderId,
+  //       order_items: products.map((item) => ({
+  //         ...item,
+  //         delivered: item.quantity,
+  //         to_deliver: 0
+  //       }))
+  //     })
+  //   )
+
+  //   setSaving(false)
+  //   setModalMarkCompleteOpen(false)
+  // }
 
   const handleMarkApprove = async () => {
     if (!selectedItem) return

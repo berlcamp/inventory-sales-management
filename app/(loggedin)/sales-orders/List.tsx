@@ -8,7 +8,7 @@ import { checkPDC } from '@/lib/helpers'
 import { supabase } from '@/lib/supabase/client'
 import { useAppDispatch } from '@/store/hook'
 import { deleteItem, updateList } from '@/store/listSlice'
-import { RootState, SalesOrder } from '@/types' // Import the RootState type
+import { RootState, SalesOrder, SalesOrderItem } from '@/types' // Import the RootState type
 import {
   Menu,
   MenuButton,
@@ -189,6 +189,7 @@ export const List = ({}) => {
   const handleMarkApprove = async () => {
     if (!selectedItem) return
 
+    // For Other Charges
     if (selectedItem.other_charges) {
       setSaving(true)
       await supabase
@@ -222,60 +223,171 @@ export const List = ({}) => {
 
     setSaving(true)
 
-    const updatedData = selectedItem.order_items.map((order) => {
-      const currentRemaining = order.product_stock?.remaining_quantity ?? 0
-
-      const newRemaining = currentRemaining - order.quantity
-
-      if (newRemaining < 0) {
-        toast.error(
-          `Not enough stock for product ${order.product_stock?.product?.name}, Please check your product stocks.`
-        )
-        throw new Error(
-          `Insufficient stock for product_stock_id ${order.product_stock_id}`
-        )
-      }
-
-      return {
-        id: order.product_stock_id,
-        remaining_quantity: newRemaining
-      }
-    })
-
-    const { error } = await supabase.from('product_stocks').upsert(updatedData)
-
-    if (error) {
-      toast.error('Error updating stock')
-      console.error(error)
-      return
-    }
-
-    await supabase
+    const { data: salesOrder, error: salesOrderError } = await supabase
       .from('sales_orders')
-      .update({ status: 'approved' })
+      .select(
+        '*,order_items:sales_order_items(*,product_stock:product_stock_id(*,product:product_id(*)))'
+      )
       .eq('id', selectedItem.id)
+      .single()
 
-    toast.success('Sales Order updated successfully!')
+    if (salesOrderError) {
+      toast.error('Error updating stock')
+      setModalMarkApproveOpen(false)
+      setSaving(false)
+      return
+    } else {
+      const updatedData = salesOrder.order_items.map(
+        (order: SalesOrderItem) => {
+          // zz
+          const currentRemaining = order.product_stock?.remaining_quantity ?? 0
 
-    // Update logs
-    await supabase.from('product_change_logs').insert({
-      sales_order_id: selectedItem.id,
-      user_id: user?.system_user_id,
-      user_name: user?.name,
-      message: `updated status to Approved`
-    })
+          const newRemaining = currentRemaining - order.quantity
 
-    // Update Redux state
-    dispatch(
-      updateList({
-        ...selectedItem,
-        status: 'approved',
-        id: selectedItem.id
+          if (newRemaining < 0) {
+            toast.error(
+              `Not enough stock for product ${order.product_stock?.product?.name}, Please check your product stocks.`
+            )
+            setModalMarkApproveOpen(false)
+            setSaving(false)
+            return
+          }
+
+          return {
+            id: order.product_stock_id,
+            remaining_quantity: newRemaining
+          }
+        }
+      )
+
+      const { error } = await supabase
+        .from('product_stocks')
+        .upsert(updatedData)
+
+      if (error) {
+        toast.error('Error updating stock')
+        console.error(error)
+        return
+      }
+
+      await supabase
+        .from('sales_orders')
+        .update({ status: 'approved' })
+        .eq('id', selectedItem.id)
+
+      toast.success('Sales Order updated successfully!')
+
+      // Update logs
+      await supabase.from('product_change_logs').insert({
+        sales_order_id: selectedItem.id,
+        user_id: user?.system_user_id,
+        user_name: user?.name,
+        message: `updated status to Approved`
       })
-    )
-    setModalMarkApproveOpen(false)
-    setSaving(false)
+
+      // Update Redux state
+      dispatch(
+        updateList({
+          ...selectedItem,
+          status: 'approved',
+          id: selectedItem.id
+        })
+      )
+      setModalMarkApproveOpen(false)
+      setSaving(false)
+    }
   }
+
+  // const handleMarkApprove = async () => {
+  //   if (!selectedItem) return
+
+  //   if (selectedItem.other_charges) {
+  //     setSaving(true)
+  //     await supabase
+  //       .from('sales_orders')
+  //       .update({ status: 'approved' })
+  //       .eq('id', selectedItem.id)
+
+  //     toast.success('Sales Order updated successfully!')
+
+  //     // Update logs
+  //     await supabase.from('product_change_logs').insert({
+  //       sales_order_id: selectedItem.id,
+  //       user_id: user?.system_user_id,
+  //       user_name: user?.name,
+  //       message: `updated status to Approved`
+  //     })
+
+  //     // Update Redux state
+  //     dispatch(
+  //       updateList({
+  //         ...selectedItem,
+  //         status: 'approved',
+  //         id: selectedItem.id
+  //       })
+  //     )
+  //     setModalMarkApproveOpen(false)
+  //     setSaving(false)
+
+  //     return
+  //   }
+
+  //   setSaving(true)
+
+  //   const updatedData = selectedItem.order_items.map((order) => {
+  //     const currentRemaining = order.product_stock?.remaining_quantity ?? 0
+
+  //     const newRemaining = currentRemaining - order.quantity
+
+  //     if (newRemaining < 0) {
+  //       toast.error(
+  //         `Not enough stock for product ${order.product_stock?.product?.name}, Please check your product stocks.`
+  //       )
+  //       throw new Error(
+  //         `Insufficient stock for product_stock_id ${order.product_stock_id}`
+  //       )
+  //     }
+
+  //     return {
+  //       id: order.product_stock_id,
+  //       remaining_quantity: newRemaining
+  //     }
+  //   })
+
+  //   const { error } = await supabase.from('product_stocks').upsert(updatedData)
+
+  //   if (error) {
+  //     toast.error('Error updating stock')
+  //     console.error(error)
+  //     return
+  //   }
+
+  //   await supabase
+  //     .from('sales_orders')
+  //     .update({ status: 'approved' })
+  //     .eq('id', selectedItem.id)
+
+  //   toast.success('Sales Order updated successfully!')
+
+  //   // Update logs
+  //   await supabase.from('product_change_logs').insert({
+  //     sales_order_id: selectedItem.id,
+  //     user_id: user?.system_user_id,
+  //     user_name: user?.name,
+  //     message: `updated status to Approved`
+  //   })
+
+  //   // Update Redux state
+  //   dispatch(
+  //     updateList({
+  //       ...selectedItem,
+  //       status: 'approved',
+  //       id: selectedItem.id
+  //     })
+  //   )
+  //   setModalMarkApproveOpen(false)
+  //   setSaving(false)
+  // }
 
   const openClaimSlip = async (item: ItemType) => {
     setSelectedItem(item)
