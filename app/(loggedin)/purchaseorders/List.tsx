@@ -445,12 +445,12 @@ export const List = ({}) => {
                     item.status === 'delivered') && (
                     <>
                       <span
-                        className="hidden text-xs text-blue-800 cursor-pointer font-bold"
+                        className="text-xs text-blue-800 cursor-pointer font-bold"
                         onClick={() => openPrint(item)}
                       >
                         Print P.O.
                       </span>
-                      <span className="hidden">|</span>
+                      <span>|</span>
                     </>
                   )}
                   <span
