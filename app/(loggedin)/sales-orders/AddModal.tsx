@@ -393,6 +393,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         .select(
           '*,product:product_id(*),purchase_order:purchase_order_id(po_number)'
         )
+        .gt('remaining_quantity', 0)
         .eq('company_id', user?.company_id)
         .order('purchase_date', { ascending: true })
 
