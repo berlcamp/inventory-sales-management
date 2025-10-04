@@ -155,7 +155,7 @@ export const List = ({}) => {
         remaining_quantity: item.quantity,
         purchase_date: new Date().toISOString().split('T')[0],
         purchase_order_id: purchaseOrderId,
-        company_id: process.env.NEXT_PUBLIC_COMPANY_ID
+        company_id: user?.company_id
       }))
 
       const filteredEntries = stockEntries.filter(

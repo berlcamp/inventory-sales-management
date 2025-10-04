@@ -388,6 +388,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   // Fetch on page load
   useEffect(() => {
     const fetchData = async () => {
+      console.log('user?.company_id', user?.company_id)
       const { data } = await supabase
         .from('product_stocks')
         .select(
@@ -403,6 +404,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         .eq('company_id', user?.company_id)
         .order('name', { ascending: true })
 
+      console.log('data', data)
       setProductsList(data)
       setCustomers(customersData)
     }
