@@ -38,7 +38,7 @@ const MainSidebar = () => {
         </li>
         <li>
           <Link
-            href="/products"
+            href="/products2"
             className={`app__menu_link ${
               currentRoute === '/products2' ? 'app_menu_link_active' : ''
             }`}
