@@ -1,6 +1,7 @@
 // components/Header.tsx
 import { getSupabaseClient } from '@/lib/supabase/server'
-import CompanySwitcher from './CompanySwitcher' // ✅ import switcher
+import Image from 'next/image'
+import CompanySwitcher from './CompanySwitcher'
 import ThemeToggle from './ThemeToggle'
 import { Button } from './ui/button'
 
@@ -18,29 +19,39 @@ export async function Header() {
     .single()
 
   return (
-    <header className="fixed px-2 top-0 z-40 w-full bg-gray-700 dark:bg-gray-800 flex items-center shadow-md h-14">
-      <div className="flex w-full items-center text-gray-300 space-x-4">
-        <div className="flex-1">
-          <div className="hidden lg:block text-lg font-medium px-4 space-x-2">
-            <span>Sales & Inventory Tracker</span>
-          </div>
+    <header className="fixed top-0 z-40 w-full bg-gray-700 dark:bg-gray-800 shadow-md h-14 flex items-center px-3">
+      <div className="flex w-full items-center justify-between text-gray-300">
+        {/* Left side — logo and title */}
+        <div className="flex items-center space-x-3">
+          <Image
+            src="/cgm-logo.png"
+            alt="Caragon General Merchandise Logo"
+            width={36}
+            height={36}
+            className="rounded-md hidden lg:block"
+            priority
+          />
+          <span className="hidden lg:block text-lg font-semibold tracking-wide text-white">
+            CARAGON GENERAL MERCHANDISE OPC
+          </span>
         </div>
 
-        <div className="flex items-center text-gray-300 space-x-4">
-          {/* ✅ Company Switcher goes here */}
+        {/* Right side — controls */}
+        <div className="flex items-center space-x-4 text-gray-300">
           <CompanySwitcher />
 
           {/* Display the user's name */}
-          <span>{`Hello, ${userData?.name}`}</span>
+          <span className="hidden sm:block">{`Hello, ${
+            userData?.name || 'User'
+          }`}</span>
 
-          {/* Theme toggle (light/dark mode) */}
           <ThemeToggle />
 
           {/* Logout button */}
           <form action="/auth/signout" method="post">
             <Button
               variant="outline"
-              className="bg-gray-700"
+              className="bg-gray-700 hover:bg-gray-600 text-gray-100"
               size="sm"
               type="submit"
             >
