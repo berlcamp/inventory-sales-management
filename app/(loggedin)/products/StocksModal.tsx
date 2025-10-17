@@ -28,7 +28,7 @@ export const StocksModal = ({ editData, onClose, isOpen }: ModalProps) => {
     const fetchData = async () => {
       const { data, error } = await supabase
         .from('product_stocks')
-        .select('*,purchase_order:purchase_order_id(po_number)')
+        .select('*,purchase_order:purchase_order_id(po_number,date)')
         .eq('product_id', editData?.id)
 
       if (error) {
