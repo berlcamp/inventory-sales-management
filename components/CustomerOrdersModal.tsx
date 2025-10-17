@@ -43,6 +43,7 @@ export const CustomerOrdersModal = ({
   //
   const [logs, setLogs] = useState<SalesOrder[] | null>([])
   const [runningTotal, setRunningTotal] = useState(0)
+  const [totalReceivable, setTotalReceivable] = useState(0)
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
   const [modalPaymentOpen, setModalPaymentOpen] = useState(false)
 
@@ -77,6 +78,13 @@ export const CustomerOrdersModal = ({
           return sum + orderTotal
         }, 0)
         setRunningTotal(total)
+
+        const totalReceivable = data.reduce((sum, item) => {
+          return (
+            sum + (item.payment_status !== 'Deposited' ? item.total_amount : 0)
+          )
+        }, 0)
+        setTotalReceivable(totalReceivable)
       } else {
         setRunningTotal(0)
       }
@@ -119,13 +127,23 @@ export const CustomerOrdersModal = ({
           </div>
           {/* Scrollable Form Content */}
           <div className="app__modal_dialog_content">
-            <div className="mt-4 text-right font-semibold">
-              Total:&nbsp;
-              <Php />{' '}
-              {runningTotal?.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              })}
+            <div className="mt-4 text-right font-semibold space-y-2">
+              <div className="text-nowrap">
+                Total Amount:&nbsp;
+                <Php />{' '}
+                {runningTotal?.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </div>
+              <div className="text-nowrap">
+                Total Receivable:&nbsp;
+                <Php />{' '}
+                {totalReceivable?.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </div>
             </div>
             <div className="overflow-x-none pb-20">
               <table className="app__table">
