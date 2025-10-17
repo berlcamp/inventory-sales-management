@@ -186,7 +186,7 @@ export const OutstandingPayments = ({
               </div>
               {/* 💰 Total Payable Amount */}
               <div className="mt-6 text-right text-lg font-semibold">
-                Total Payable: ₱
+                Total Receivable: ₱
                 {orders
                   .reduce((sum, order) => sum + order.total_amount, 0)
                   .toLocaleString(undefined, {
