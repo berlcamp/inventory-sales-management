@@ -40,7 +40,7 @@ const MainSidebar = () => {
           <Link
             href="/products"
             className={`app__menu_link ${
-              currentRoute === '/products' ? 'app_menu_link_active' : ''
+              currentRoute === '/products2' ? 'app_menu_link_active' : ''
             }`}
           >
             <span className="flex-1 ml-3 whitespace-nowrap">Product List</span>

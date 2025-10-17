@@ -92,7 +92,7 @@ export const MissingModal = ({ isOpen, onClose, editData }: Props) => {
           {/* Sticky Header */}
           <div className="app__modal_dialog_title_container">
             <DialogTitle as="h3" className="text-base font-medium flex-1">
-              Add Missing Quantity
+              Add Missing/Damage Quantity
             </DialogTitle>
             <Button type="button" onClick={onClose} variant="outline">
               Close

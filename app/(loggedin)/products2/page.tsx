@@ -46,6 +46,7 @@ export default function Page() {
           )
         }))
 
+        console.log('sortedData', sortedData)
         // Update the list of suppliers in Redux store
         dispatch(addList(sortedData))
         setTotalCount(count || 0)
