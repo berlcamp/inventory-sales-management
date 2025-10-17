@@ -408,11 +408,6 @@ export const AddPaymentModal = ({ isOpen, onClose, editData }: ModalProps) => {
                 </form>
               </Form>
             )}
-            <div className="text-xs font-light italic">
-              Payment Status automally change to{' '}
-              <span className="font-bold">&quot;PAID&quot;</span> once the
-              Remaining Amount is paid.
-            </div>
             <hr />
 
             <div className="flex space-x-4 border-t pt-2">

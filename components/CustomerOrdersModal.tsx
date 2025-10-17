@@ -1,14 +1,27 @@
 // components/AddItemTypeModal.tsx
 'use client'
 
+import { PaymentsModal } from '@/components/PaymentsModal'
+import { checkPDC } from '@/lib/helpers'
 import { supabase } from '@/lib/supabase/client'
 import { RootState } from '@/store'
 import { useAppSelector } from '@/store/hook'
 import { SalesOrder, SalesOrderItem } from '@/types'
-import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems,
+  Transition
+} from '@headlessui/react'
 import { format } from 'date-fns'
-import { useEffect, useState } from 'react'
+import { ChevronDown, PhilippinePeso } from 'lucide-react'
+import { Fragment, useEffect, useState } from 'react'
 import Php from './Php'
+import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 
 // Always update this on other pages
@@ -30,6 +43,8 @@ export const CustomerOrdersModal = ({
   //
   const [logs, setLogs] = useState<SalesOrder[] | null>([])
   const [runningTotal, setRunningTotal] = useState(0)
+  const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
+  const [modalPaymentOpen, setModalPaymentOpen] = useState(false)
 
   const user = useAppSelector((state: RootState) => state.user.user)
 
@@ -37,7 +52,9 @@ export const CustomerOrdersModal = ({
     const initForm = async () => {
       const { data, error } = await supabase
         .from('sales_orders')
-        .select('*,order_items:sales_order_items(*,product:product_id(*))')
+        .select(
+          '*,payments:sales_order_payments(*),order_items:sales_order_items(*,product:product_id(*))'
+        )
         .eq('company_id', user?.company_id)
         .eq('customer_id', customerId)
         .order('id', { ascending: false })
@@ -69,6 +86,11 @@ export const CustomerOrdersModal = ({
       initForm()
     }
   }, [customerId, isOpen, user?.company_id])
+
+  const handleReceivePayment = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalPaymentOpen(true)
+  }
 
   return (
     <Dialog
@@ -115,6 +137,7 @@ export const CustomerOrdersModal = ({
                     <th className="app__th text-right">Quantity</th>
                     <th className="app__th text-right">Price</th>
                     <th className="app__th text-right">Total Amount</th>
+                    <th className="app__th text-right">Payment Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -129,7 +152,9 @@ export const CustomerOrdersModal = ({
 
                       {/* SO Number */}
                       <td className="app__td">
-                        <span className="font-bold">{item.so_number}</span>
+                        <span className="font-bold text-nowrap">
+                          {item.so_number}
+                        </span>
                       </td>
 
                       {/* Products */}
@@ -158,7 +183,7 @@ export const CustomerOrdersModal = ({
                       <td className="app__td text-right">
                         {item.order_items.length > 0 &&
                           item.order_items.map((oi) => (
-                            <div key={oi.id}>
+                            <div key={oi.id} className="text-nowrap">
                               <Php />{' '}
                               {oi.unit_price.toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
@@ -170,13 +195,61 @@ export const CustomerOrdersModal = ({
 
                       {/* Total Amount */}
                       <td className="app__td text-right">
-                        <span className="font-bold">
+                        <span className="font-bold text-nowrap">
                           <Php />{' '}
                           {item.total_amount.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                           })}
                         </span>
+                      </td>
+
+                      {/* Payment Status */}
+                      <td className="app__td text-right">
+                        <div className="flex space-x-1">
+                          <Menu as="div" className="relative">
+                            <MenuButton
+                              as={Badge}
+                              className={`flex items-center space-x-1 cursor-pointer ${
+                                item.payment_status === 'partial'
+                                  ? 'bg-orange-600 text-white'
+                                  : item.payment_status === 'Cheque'
+                                  ? 'bg-orange-600 text-white'
+                                  : item.payment_status === 'Hold'
+                                  ? 'bg-orange-600 text-white'
+                                  : item.payment_status === 'Deposited'
+                                  ? 'bg-green-600 text-white'
+                                  : ''
+                              }`}
+                            >
+                              <span>
+                                {item.payment_status === 'partial'
+                                  ? 'Partially Paid'
+                                  : item.payment_status}
+                              </span>
+                              <ChevronDown className="h-4 w-4" />
+                            </MenuButton>
+
+                            <Transition as={Fragment}>
+                              <MenuItems className="app__dropdown_items_left">
+                                <div className="py-1">
+                                  <MenuItem>
+                                    <div
+                                      onClick={() => handleReceivePayment(item)}
+                                      className="app__dropdown_item"
+                                    >
+                                      <PhilippinePeso className="w-4 h-4" />
+                                      <span>View Payments</span>
+                                    </div>
+                                  </MenuItem>
+                                </div>
+                              </MenuItems>
+                            </Transition>
+                          </Menu>
+                          {item.payments && checkPDC(item.payments) && (
+                            <Badge variant="orange">PDC</Badge>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -203,23 +276,7 @@ export const CustomerOrdersModal = ({
                             maximumFractionDigits: 2
                           })}
                       </td>
-                      <td className="app__td text-right">
-                        <Php />{' '}
-                        {logs
-                          .reduce(
-                            (sum, item) =>
-                              sum +
-                              item.order_items.reduce(
-                                (s, oi) => s + oi.unit_price,
-                                0
-                              ),
-                            0
-                          )
-                          .toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
-                      </td>
+                      <td className="app__td text-right"></td>
                       <td className="app__td text-right">
                         <Php />{' '}
                         {logs
@@ -242,6 +299,13 @@ export const CustomerOrdersModal = ({
               </table>
             </div>
           </div>
+          {selectedItem && modalPaymentOpen && (
+            <PaymentsModal
+              isOpen={modalPaymentOpen}
+              editData={selectedItem}
+              onClose={() => setModalPaymentOpen(false)}
+            />
+          )}
         </DialogPanel>
       </div>
     </Dialog>
