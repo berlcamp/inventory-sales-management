@@ -94,7 +94,7 @@ export const StocksList = () => {
             <th className="app__th">Purchase Cost</th>
             <th className="app__th">Selling Price</th>
             <th className="app__th">Remaining Quantity</th>
-            <th className="app__th">Missing</th>
+            <th className="app__th">Missing/Damage</th>
             <th className="app__th"></th>
           </tr>
         </thead>
@@ -105,9 +105,9 @@ export const StocksList = () => {
                 {item.purchase_order?.po_number}
               </td>
               <td className="app__td">
-                {item.purchase_order?.date &&
-                !isNaN(new Date(item.purchase_order?.date).getTime())
-                  ? format(new Date(item.purchase_order?.date), 'MMMM dd, yyyy')
+                {item.purchase_date &&
+                !isNaN(new Date(item.purchase_date).getTime())
+                  ? format(new Date(item.purchase_date), 'MMMM dd, yyyy')
                   : 'Invalid date'}
               </td>
               <td className="app__td">{item.quantity}</td>
