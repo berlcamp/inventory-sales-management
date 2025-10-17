@@ -1,6 +1,5 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
 import { RootState, SalesOrder } from '@/types' // Import the RootState type
 import {
   Menu,
@@ -93,17 +92,7 @@ export const List = ({}) => {
               <td className="app__td">
                 {item.status === 'completed' && (
                   <div className="flex space-x-1">
-                    <div>
-                      {item.payment_status === 'unpaid' && (
-                        <Badge>{item.payment_status}</Badge>
-                      )}
-                      {item.payment_status === 'partial' && (
-                        <Badge variant="orange">{item.payment_status}</Badge>
-                      )}
-                      {item.payment_status === 'paid' && (
-                        <Badge variant="green">{item.payment_status}</Badge>
-                      )}
-                    </div>
+                    <div>{item.payment_status}</div>
                   </div>
                 )}
               </td>
