@@ -11,6 +11,7 @@ import { ProductStock, RootState } from '@/types' // Import the RootState type
 import { format } from 'date-fns'
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
+import { CostModal } from './CostModal'
 import { EditStockModal } from './EditStockModal'
 import { MissingModal } from './MissingModal'
 import { PriceModal } from './PriceModal'
@@ -27,6 +28,7 @@ export const StocksList = ({ categoryId }: { categoryId: number }) => {
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalAddOpen, setModalAddOpen] = useState(false)
+  const [modalCostOpen, setModalCostOpen] = useState(false)
   const [editStockOpen, setEditStockOpen] = useState(false)
   const [modalLogsOpen, setModalLogsOpen] = useState(false)
   const [modalMissingOpen, setModalMissingOpen] = useState(false)
@@ -40,6 +42,10 @@ export const StocksList = ({ categoryId }: { categoryId: number }) => {
   const handleEdit = (item: ItemType) => {
     setSelectedItem(item)
     setModalAddOpen(true)
+  }
+  const handleEditCost = (item: ItemType) => {
+    setSelectedItem(item)
+    setModalCostOpen(true)
   }
 
   const handleLogs = (item: ItemType) => {
@@ -154,6 +160,15 @@ export const StocksList = ({ categoryId }: { categoryId: number }) => {
                       Update Price
                     </span>
                   </div>
+                  <div>|</div>
+                  <div
+                    onClick={() => handleEditCost(item)}
+                    className="cursor-pointer"
+                  >
+                    <span className="text-blue-800 text-nowrap">
+                      Change Purchase Cost
+                    </span>
+                  </div>
 
                   <div
                     onClick={() => handleEditStock(item)}
@@ -224,6 +239,11 @@ export const StocksList = ({ categoryId }: { categoryId: number }) => {
         isOpen={modalAddOpen}
         editData={selectedItem}
         onClose={() => setModalAddOpen(false)}
+      />
+      <CostModal
+        isOpen={modalCostOpen}
+        editData={selectedItem}
+        onClose={() => setModalCostOpen(false)}
       />
       <EditStockModal
         isOpen={editStockOpen}
