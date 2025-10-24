@@ -1,6 +1,7 @@
 // components/AddItemTypeModal.tsx
 'use client'
 
+import Php from '@/components/Php'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -26,6 +27,7 @@ import { z } from 'zod'
 type ItemType = ProductStock
 type FormType = {
   selling_price: number
+  hso_price: number
 }
 const table = 'product_stocks'
 const title = 'Price'
@@ -37,7 +39,8 @@ interface ModalProps {
 }
 
 const FormSchema = z.object({
-  selling_price: z.coerce.number().min(1, 'Selling price is required')
+  selling_price: z.coerce.number().min(1, 'Selling price is required'),
+  hso_price: z.coerce.number().min(0, 'HSO/PGCE price is required')
 })
 
 export const PriceModal = ({ isOpen, onClose, editData }: ModalProps) => {
@@ -49,7 +52,8 @@ export const PriceModal = ({ isOpen, onClose, editData }: ModalProps) => {
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      selling_price: 0
+      selling_price: 0,
+      hso_price: 0
     }
   })
 
@@ -57,7 +61,10 @@ export const PriceModal = ({ isOpen, onClose, editData }: ModalProps) => {
   const onSubmit = async (data: FormType) => {
     if (isSubmitting) return // 🚫 Prevent double-submit
 
-    if (editData?.selling_price === data.selling_price) {
+    if (
+      editData?.selling_price === data.selling_price &&
+      editData?.hso_price === data.hso_price
+    ) {
       return
     }
 
@@ -65,7 +72,8 @@ export const PriceModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
     try {
       const newData = {
-        selling_price: data.selling_price
+        selling_price: data.selling_price,
+        hso_price: data.hso_price
       }
 
       // If exists (editing), update it
@@ -78,14 +86,32 @@ export const PriceModal = ({ isOpen, onClose, editData }: ModalProps) => {
         if (error) {
           console.error('Error updating:', error)
         } else {
-          // Update logs
-          await supabase.from('product_change_logs').insert({
-            product_id: editData?.product_id,
-            product_stock_id: editData?.id,
-            user_id: user?.system_user_id,
-            user_name: user?.name,
-            message: `Updated price from ${editData.selling_price} to ${data.selling_price}`
-          })
+          // Update logs if price changes
+          const logs = []
+
+          if (editData?.selling_price !== data.selling_price) {
+            logs.push({
+              product_id: editData?.product_id,
+              product_stock_id: editData?.id,
+              user_id: user?.system_user_id,
+              user_name: user?.name,
+              message: `Updated selling price from ${editData.selling_price} to ${data.selling_price}`
+            })
+          }
+
+          if (editData?.hso_price !== data.hso_price) {
+            logs.push({
+              product_id: editData?.product_id,
+              product_stock_id: editData?.id,
+              user_id: user?.system_user_id,
+              user_name: user?.name,
+              message: `Updated HSO price from ${editData.hso_price} to ${data.hso_price}`
+            })
+          }
+
+          if (logs.length > 0) {
+            await supabase.from('product_change_logs').insert(logs)
+          }
 
           //Update list on redux
           dispatch(
@@ -109,7 +135,8 @@ export const PriceModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
   useEffect(() => {
     form.reset({
-      selling_price: editData?.selling_price || 0
+      selling_price: editData?.selling_price || 0,
+      hso_price: editData?.hso_price || 0
     })
   }, [form, editData, isOpen])
 
@@ -141,33 +168,60 @@ export const PriceModal = ({ isOpen, onClose, editData }: ModalProps) => {
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <div className="app__formlabel_standard">Current Price</div>
-                    <div className="app__formlabel_standard">
-                      {editData?.selling_price}
+                    <div className="text-sm font-medium text-gray-800">
+                      Current Selling Price
+                    </div>
+                    <div className="text-xl font-bold text-nowrap">
+                      <Php /> <span>{editData?.selling_price}</span>
                     </div>
                   </div>
-                  <div>
-                    <FormField
-                      control={form.control}
-                      name="selling_price"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="app__formlabel_standard">
-                            New Price
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              className="app__input_standard"
-                              placeholder="Selling Price"
-                              type="number"
-                              step="any"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <div className="space-y-6">
+                    <div>
+                      <FormField
+                        control={form.control}
+                        name="selling_price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="app__formlabel_standard">
+                              New Selling Price
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                className="app__input_standard"
+                                placeholder="Selling Price"
+                                type="number"
+                                step="any"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div>
+                      <FormField
+                        control={form.control}
+                        name="hso_price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="app__formlabel_standard">
+                              HSO/PGCE Price
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                className="app__input_standard"
+                                placeholder="HSO/PGCE Price"
+                                type="number"
+                                step="any"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="app__modal_dialog_footer">

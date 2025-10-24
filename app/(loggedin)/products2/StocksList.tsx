@@ -138,6 +138,7 @@ export const StocksList = ({ categoryId }: { categoryId: number }) => {
             <th className="app__th">Purchase Date</th>
             <th className="app__th">Total Quantity</th>
             <th className="app__th">Purchase Cost</th>
+            <th className="app__th">HSO/PGCE Price</th>
             <th className="app__th">Selling Price</th>
             <th className="app__th">Remaining Quantity</th>
             <th className="app__th">Missing/Damage</th>
@@ -209,6 +210,19 @@ export const StocksList = ({ categoryId }: { categoryId: number }) => {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 })}
+              </td>
+              <td className="app__td text-nowrap">
+                {item.hso_price ? (
+                  <>
+                    <Php />{' '}
+                    {item.hso_price?.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}
+                  </>
+                ) : (
+                  'N/A'
+                )}
               </td>
               <td className="app__td text-nowrap">
                 <Php />{' '}

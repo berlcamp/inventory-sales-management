@@ -69,6 +69,7 @@ export interface ProductStock {
   product: Product
   cost: number
   selling_price: number
+  hso_price: number
   quantity: number
   remaining_quantity: number
   purchase_order_id?: number
