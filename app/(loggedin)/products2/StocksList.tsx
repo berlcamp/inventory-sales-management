@@ -22,6 +22,7 @@ export const StocksList = ({ categoryId }: { categoryId: number }) => {
   const dispatch = useAppDispatch()
 
   const list = useSelector((state: RootState) => state.stocksList.value)
+  const user = useSelector((state: RootState) => state.user.user)
 
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -100,9 +101,15 @@ export const StocksList = ({ categoryId }: { categoryId: number }) => {
         const sorted = data
           .filter((item) => item.product)
           .sort((a, b) => {
-            const da = new Date(a.purchase_order?.date || 0).getTime()
-            const db = new Date(b.purchase_order?.date || 0).getTime()
-            return db - da // descending order (latest first)
+            if (user?.company_id === '2') {
+              const da = new Date(a.purchase_order?.date || 0).getTime()
+              const db = new Date(b.purchase_order?.date || 0).getTime()
+              return db - da // descending order (latest first)
+            } else {
+              const nameA = a.product?.name?.toLowerCase() || ''
+              const nameB = b.product?.name?.toLowerCase() || ''
+              return nameA.localeCompare(nameB) // ascending alphabetical order
+            }
           })
 
         dispatch(addList(sorted))
