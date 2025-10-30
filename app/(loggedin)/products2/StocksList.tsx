@@ -170,10 +170,10 @@ export const StocksList = ({ categoryId }: { categoryId: number }) => {
                       Change Purchase Cost
                     </span>
                   </div>
-
+                  <div>|</div>
                   <div
                     onClick={() => handleEditStock(item)}
-                    className="cursor-pointer hidden"
+                    className="cursor-pointer"
                   >
                     <span className="text-blue-800 text-nowrap">
                       Update Remaining Stocks
