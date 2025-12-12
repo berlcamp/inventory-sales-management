@@ -1,48 +1,60 @@
 // app/layout.tsx (Server Component)
-import { AuthGuard } from '@/components/AuthGuard'
-import { Header } from '@/components/Header'
-import { Providers } from '@/components/Providers'
-import Sidebar from '@/components/Sidebar'
-import MainSidebar from '@/components/Sidebars/MainSidebar'
-import { getSupabaseClient } from '@/lib/supabase/server'
-import { ReactNode } from 'react'
-import { Toaster } from 'react-hot-toast'
-import './globals.css'
+import { AuthGuard } from "@/components/AuthGuard";
+import { Header } from "@/components/Header";
+import { Providers } from "@/components/Providers";
+import Sidebar from "@/components/Sidebar";
+import MainSidebar from "@/components/Sidebars/MainSidebar";
+import { getSupabaseClient } from "@/lib/supabase/server";
+import { ReactNode } from "react";
+import { Toaster } from "react-hot-toast";
+import "./globals.css";
 
-import { OfflineDetector } from '@/components/OfflineDetector'
-import type { Metadata } from 'next'
+import Maintenance from "@/components/Maintenance";
+import { OfflineDetector } from "@/components/OfflineDetector";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Inventory-Sales-Management',
-  description: 'Inventory-Sales-Management by BTC',
+  title: "Inventory-Sales-Management",
+  description: "Inventory-Sales-Management by BTC",
   openGraph: {
-    title: 'Inventory Sales Management',
-    description: 'Inventory Sales Management',
+    title: "Inventory Sales Management",
+    description: "Inventory Sales Management",
     images: [
       {
-        url: 'https://ac23.ph/bg.png', // Full URL to the image
+        url: "https://ac23.ph/bg.png", // Full URL to the image
         width: 964,
         height: 608,
-        alt: 'Asenso Pinoy Membership'
-      }
-    ]
-  }
-}
+        alt: "Asenso Pinoy Membership",
+      },
+    ],
+  },
+};
 
 export default async function RootLayout({
-  children
+  children,
 }: {
-  children: ReactNode
+  children: ReactNode;
 }) {
-  const supabase = await getSupabaseClient()
+  const supabase = await getSupabaseClient();
   const {
-    data: { user }
-  } = await supabase.auth.getUser()
+    data: { user },
+  } = await supabase.auth.getUser();
 
+  const isMaintenance = true;
+
+  if (isMaintenance) {
+    return (
+      <html lang="en">
+        <body>
+          <Maintenance />
+        </body>
+      </html>
+    );
+  }
   return (
     <html lang="en">
       <body
-        className={`dark:bg-[#191919] ${!user ? 'min-h-screen bg-white' : ''}`}
+        className={`dark:bg-[#191919] ${!user ? "min-h-screen bg-white" : ""}`}
       >
         <Toaster />
         <Providers>
@@ -67,5 +79,5 @@ export default async function RootLayout({
         </Providers>
       </body>
     </html>
-  )
+  );
 }
