@@ -1,86 +1,86 @@
-'use client'
+"use client";
 
-import { ConfirmationModal } from '@/components/ConfirmationModal'
-import Php from '@/components/Php'
-import { ProductLogsModal } from '@/components/ProductLogsModal'
-import { supabase } from '@/lib/supabase/client'
-import { useAppDispatch } from '@/store/hook'
-import { deleteItem } from '@/store/listSlice'
-import { addList } from '@/store/stocksSlice'
-import { ProductStock, RootState } from '@/types' // Import the RootState type
-import { format } from 'date-fns'
-import { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
-import { CostModal } from './CostModal'
-import { EditStockModal } from './EditStockModal'
-import { MissingModal } from './MissingModal'
-import { PriceModal } from './PriceModal'
+import { ConfirmationModal } from "@/components/ConfirmationModal";
+import Php from "@/components/Php";
+import { ProductLogsModal } from "@/components/ProductLogsModal";
+import { supabase } from "@/lib/supabase/client";
+import { useAppDispatch } from "@/store/hook";
+import { deleteItem } from "@/store/listSlice";
+import { addList } from "@/store/stocksSlice";
+import { ProductStock, RootState } from "@/types"; // Import the RootState type
+import { format } from "date-fns";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { CostModal } from "./CostModal";
+import { EditStockModal } from "./EditStockModal";
+import { MissingModal } from "./MissingModal";
+import { PriceModal } from "./PriceModal";
 
 // Always update this on other pages
-type ItemType = ProductStock
+type ItemType = ProductStock;
 
 export const StocksList = ({ categoryId }: { categoryId: number }) => {
-  const dispatch = useAppDispatch()
+  const dispatch = useAppDispatch();
 
-  const list = useSelector((state: RootState) => state.stocksList.value)
-  const user = useSelector((state: RootState) => state.user.user)
+  const list = useSelector((state: RootState) => state.stocksList.value);
+  const user = useSelector((state: RootState) => state.user.user);
 
-  const [loading, setLoading] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [modalAddOpen, setModalAddOpen] = useState(false)
-  const [modalCostOpen, setModalCostOpen] = useState(false)
-  const [editStockOpen, setEditStockOpen] = useState(false)
-  const [modalLogsOpen, setModalLogsOpen] = useState(false)
-  const [modalMissingOpen, setModalMissingOpen] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalAddOpen, setModalAddOpen] = useState(false);
+  const [modalCostOpen, setModalCostOpen] = useState(false);
+  const [editStockOpen, setEditStockOpen] = useState(false);
+  const [modalLogsOpen, setModalLogsOpen] = useState(false);
+  const [modalMissingOpen, setModalMissingOpen] = useState(false);
 
-  const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
+  const [selectedItem, setSelectedItem] = useState<ItemType | null>(null);
 
   const handleEditStock = (item: ItemType) => {
-    setSelectedItem(item)
-    setEditStockOpen(true)
-  }
+    setSelectedItem(item);
+    setEditStockOpen(true);
+  };
   const handleEdit = (item: ItemType) => {
-    setSelectedItem(item)
-    setModalAddOpen(true)
-  }
+    setSelectedItem(item);
+    setModalAddOpen(true);
+  };
   const handleEditCost = (item: ItemType) => {
-    setSelectedItem(item)
-    setModalCostOpen(true)
-  }
+    setSelectedItem(item);
+    setModalCostOpen(true);
+  };
 
   const handleLogs = (item: ItemType) => {
-    setSelectedItem(item)
-    setModalLogsOpen(true)
-  }
+    setSelectedItem(item);
+    setModalLogsOpen(true);
+  };
 
   const handleAddMissing = (item: ItemType) => {
-    setSelectedItem(item)
-    setModalMissingOpen(true)
-  }
+    setSelectedItem(item);
+    setModalMissingOpen(true);
+  };
 
   // Delete Supplier
   const handleDelete = async () => {
     if (selectedItem) {
       const { error } = await supabase
-        .from('product_stocks')
+        .from("product_stocks")
         .delete()
-        .eq('id', selectedItem.id)
+        .eq("id", selectedItem.id);
 
       if (error) {
-        console.error('Error deleting supplier:', error.message)
+        console.error("Error deleting supplier:", error.message);
       } else {
         // delete item to Redux
-        dispatch(deleteItem(selectedItem))
-        setIsModalOpen(false)
+        dispatch(deleteItem(selectedItem));
+        setIsModalOpen(false);
       }
     }
-  }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
-        .from('product_stocks')
+        .from("product_stocks")
         .select(
           `
       *,
@@ -95,39 +95,39 @@ export const StocksList = ({ categoryId }: { categoryId: number }) => {
         date
       )
     `,
-          { count: 'exact' }
+          { count: "exact" }
         )
-        .eq('product.category_id', categoryId)
+        .eq("product.category_id", categoryId);
 
       if (error) {
-        console.error(error)
-        setLoading(false)
+        console.error(error);
+        setLoading(false);
       } else {
         // Sort client-side by purchase_order.date (safe, non-deprecated)
         const sorted = data
           .filter((item) => item.product)
           .sort((a, b) => {
-            if (user?.company_id === '2') {
-              const da = new Date(a.purchase_order?.date || 0).getTime()
-              const db = new Date(b.purchase_order?.date || 0).getTime()
-              return db - da // descending order (latest first)
+            if (user?.company_id === "2") {
+              const da = new Date(a.purchase_order?.date || 0).getTime();
+              const db = new Date(b.purchase_order?.date || 0).getTime();
+              return db - da; // descending order (latest first)
             } else {
-              const nameA = a.product?.name?.toLowerCase() || ''
-              const nameB = b.product?.name?.toLowerCase() || ''
-              return nameA.localeCompare(nameB) // ascending alphabetical order
+              const nameA = a.product?.name?.toLowerCase() || "";
+              const nameB = b.product?.name?.toLowerCase() || "";
+              return nameA.localeCompare(nameB); // ascending alphabetical order
             }
-          })
+          });
 
-        dispatch(addList(sorted))
-        setLoading(false)
+        dispatch(addList(sorted));
+        setLoading(false);
       }
-    }
+    };
 
-    if (categoryId) fetchData()
-  }, [categoryId, dispatch])
+    if (categoryId) fetchData();
+  }, [categoryId, user?.company_id, dispatch]);
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div>Loading...</div>;
   }
   return (
     <>
@@ -200,35 +200,35 @@ export const StocksList = ({ categoryId }: { categoryId: number }) => {
               <td className="app__td text-nowrap">
                 {item.purchase_order?.date &&
                 !isNaN(new Date(item.purchase_order?.date).getTime())
-                  ? format(new Date(item.purchase_order?.date), 'MMM dd, yyyy')
-                  : 'Invalid date'}
+                  ? format(new Date(item.purchase_order?.date), "MMM dd, yyyy")
+                  : "Invalid date"}
               </td>
               <td className="app__td">{item.quantity}</td>
               <td className="app__td text-nowrap">
-                <Php />{' '}
+                <Php />{" "}
                 {item.cost?.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
+                  maximumFractionDigits: 2,
                 })}
               </td>
               <td className="app__td text-nowrap">
                 {item.hso_price ? (
                   <>
-                    <Php />{' '}
+                    <Php />{" "}
                     {item.hso_price?.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
-                      maximumFractionDigits: 2
+                      maximumFractionDigits: 2,
                     })}
                   </>
                 ) : (
-                  'N/A'
+                  "N/A"
                 )}
               </td>
               <td className="app__td text-nowrap">
-                <Php />{' '}
+                <Php />{" "}
                 {item.selling_price?.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
+                  maximumFractionDigits: 2,
                 })}
               </td>
               <td className="app__td">
@@ -279,5 +279,5 @@ export const StocksList = ({ categoryId }: { categoryId: number }) => {
         />
       )}
     </>
-  )
-}
+  );
+};
