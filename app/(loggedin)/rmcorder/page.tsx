@@ -1,0 +1,161 @@
+"use client";
+
+import LoadingSkeleton from "@/components/LoadingSkeleton";
+import { Button } from "@/components/ui/button";
+import { PER_PAGE } from "@/constants";
+import { supabase } from "@/lib/supabase/client";
+import { RootState } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store/hook";
+import { addList } from "@/store/listSlice";
+import { SalesOrderPayment } from "@/types";
+import { useEffect, useState } from "react";
+
+import { AddModal } from "./AddModal";
+import { Filter } from "./Filter";
+import { List } from "./List";
+
+export default function Page() {
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [modalAddOpen, setModalAddOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Filters
+  const [filter, setFilter] = useState("");
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState("");
+  const [filterOrderStatus, setFilterOrderStatus] = useState("");
+  const [filterCustomer, setFilterCustomer] = useState("");
+
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state: RootState) => state.user.user);
+
+  // Fetch on page load - filter for RMC orders (SO numbers starting with "RMC")
+  useEffect(() => {
+    dispatch(addList([]));
+
+    const fetchData = async () => {
+      setLoading(true);
+      let query = supabase
+        .from("sales_orders")
+        .select(
+          "*,customer:customer_id(*),payments:sales_order_payments(*),order_items:sales_order_items(*,product_stock:product_stock_id(*,product:product_id(*)))",
+          { count: "exact" }
+        )
+        .eq("company_id", user?.company_id)
+        .ilike("so_number", "RMC%") // Filter for RMC orders
+        .order("date", { ascending: false })
+        .range((page - 1) * PER_PAGE, page * PER_PAGE - 1);
+
+      if (filter) {
+        query = query.ilike("so_number", `%RMC%${filter}%`);
+      }
+
+      if (filterCustomer !== "") {
+        query = query.eq("customer_id", filterCustomer);
+      }
+
+      if (filterPaymentStatus === "PDC") {
+        query = query.not("payments", "is", null);
+      } else if (filterPaymentStatus) {
+        query = query.eq("payment_status", filterPaymentStatus);
+      } else if (filterOrderStatus) {
+        query = query.eq("status", filterOrderStatus);
+      }
+
+      const { data, count, error } = await query;
+
+      if (error) {
+        console.error(error);
+      } else {
+        if (filterPaymentStatus === "PDC") {
+          const filteredData = data?.filter((order) =>
+            order.payments?.some((p: SalesOrderPayment) => p.type === "PDC")
+          );
+          dispatch(addList(filteredData));
+        } else {
+          dispatch(addList(data));
+        }
+
+        setTotalCount(count || 0);
+      }
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [
+    page,
+    filter,
+    filterPaymentStatus,
+    filterOrderStatus,
+    filterCustomer,
+    dispatch,
+    user?.company_id,
+  ]);
+
+  useEffect(() => {
+    if (user?.company_id !== "4") {
+      window.location.href = "/";
+    }
+  }, [user?.company_id]);
+
+  if (user?.company_id !== "4") {
+    return <div>Page not available.</div>;
+  }
+
+  return (
+    <div>
+      <div className="app__title">
+        <h1 className="text-3xl font-semibold">RMC Orders</h1>
+        <div className="ml-auto space-x-2">
+          <Button onClick={() => setModalAddOpen(true)} className="ml-auto">
+            Create RMC Order
+          </Button>
+        </div>
+      </div>
+
+      <Filter
+        setFilterCustomer={setFilterCustomer}
+        setFilter={setFilter}
+        setFilterPaymentStatus={setFilterPaymentStatus}
+        setFilterOrderStatus={setFilterOrderStatus}
+      />
+
+      <div className="mt-4 py-2 text-xs border-t border-gray-200 text-gray-500">
+        Showing {Math.min((page - 1) * PER_PAGE + 1, totalCount)} to{" "}
+        {Math.min(page * PER_PAGE, totalCount)} of {totalCount} results
+      </div>
+
+      <List />
+
+      {loading && <LoadingSkeleton />}
+
+      {totalCount === 0 && !loading && (
+        <div className="mt-4 flex justify-center items-center space-x-2">
+          No records found.
+        </div>
+      )}
+      {totalCount > 0 && (
+        <div className="mt-4 flex justify-center items-center space-x-2">
+          <Button
+            size="xs"
+            onClick={() => setPage(page - 1)}
+            disabled={page === 1}
+          >
+            Previous
+          </Button>
+          <p>
+            Page {page} of {Math.ceil(totalCount / PER_PAGE)}
+          </p>
+          <Button
+            size="xs"
+            onClick={() => setPage(page + 1)}
+            disabled={page * PER_PAGE >= totalCount}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+      <AddModal isOpen={modalAddOpen} onClose={() => setModalAddOpen(false)} />
+    </div>
+  );
+}

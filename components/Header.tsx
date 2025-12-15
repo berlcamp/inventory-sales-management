@@ -1,22 +1,22 @@
 // components/Header.tsx
-import { getSupabaseClient } from '@/lib/supabase/server'
-import Image from 'next/image'
-import CompanySwitcher from './CompanySwitcher'
-import ThemeToggle from './ThemeToggle'
-import { Button } from './ui/button'
+import { getSupabaseClient } from "@/lib/supabase/server";
+import Image from "next/image";
+import CompanySwitcher from "./CompanySwitcher";
+import ThemeToggle from "./ThemeToggle";
+import { Button } from "./ui/button";
 
 export async function Header() {
-  const supabase = await getSupabaseClient()
+  const supabase = await getSupabaseClient();
 
   const {
-    data: { user }
-  } = await supabase.auth.getUser()
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: userData } = await supabase
-    .from('users')
-    .select('name')
-    .eq('email', user?.email)
-    .single()
+    .from("users")
+    .select("name")
+    .eq("email", user?.email)
+    .single();
 
   return (
     <header className="fixed top-0 z-40 w-full bg-gray-700 dark:bg-gray-800 shadow-md h-14 flex items-center px-3">
@@ -42,7 +42,7 @@ export async function Header() {
 
           {/* Display the user's name */}
           <span className="hidden sm:block">{`Hello, ${
-            userData?.name || 'User'
+            userData?.name || "User"
           }`}</span>
 
           <ThemeToggle />
@@ -61,5 +61,5 @@ export async function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }
