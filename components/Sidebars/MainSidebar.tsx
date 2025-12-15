@@ -1,14 +1,14 @@
-'use client'
+"use client";
 
-import { RootState } from '@/types'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useSelector } from 'react-redux'
+import { RootState } from "@/types";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSelector } from "react-redux";
 
 const MainSidebar = () => {
-  const currentRoute = usePathname()
+  const currentRoute = usePathname();
 
-  const user = useSelector((state: RootState) => state.user.user)
+  const user = useSelector((state: RootState) => state.user.user);
 
   return (
     <>
@@ -23,7 +23,7 @@ const MainSidebar = () => {
           <Link
             href="/"
             className={`app__menu_link ${
-              currentRoute === '/' ? 'app_menu_link_active' : ''
+              currentRoute === "/" ? "app_menu_link_active" : ""
             }`}
           >
             <span className="flex-1 ml-3 whitespace-nowrap">Overview</span>
@@ -36,28 +36,49 @@ const MainSidebar = () => {
             <span className="font-semibold">Products</span>
           </div>
         </li>
-        <li>
-          <Link
-            href="/products2"
-            className={`app__menu_link ${
-              currentRoute === '/products2' ? 'app_menu_link_active' : ''
-            }`}
-          >
-            <span className="flex-1 ml-3 whitespace-nowrap">Product List</span>
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="/categories"
-            className={`app__menu_link ${
-              currentRoute === '/categories' ? 'app_menu_link_active' : ''
-            }`}
-          >
-            <span className="flex-1 ml-3 whitespace-nowrap">
-              Categories Settings
-            </span>
-          </Link>
-        </li>
+        {user?.company_id === "4" && (
+          <li>
+            <Link
+              href="/productstocks"
+              className={`app__menu_link ${
+                currentRoute === "/productstocks" ? "app_menu_link_active" : ""
+              }`}
+            >
+              <span className="flex-1 ml-3 whitespace-nowrap">
+                Product Stocks
+              </span>
+            </Link>
+          </li>
+        )}
+        {user?.company_id !== "4" && (
+          <>
+            <li>
+              <Link
+                href="/products2"
+                className={`app__menu_link ${
+                  currentRoute === "/products2" ? "app_menu_link_active" : ""
+                }`}
+              >
+                <span className="flex-1 ml-3 whitespace-nowrap">
+                  Product List
+                </span>
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/categories"
+                className={`app__menu_link ${
+                  currentRoute === "/categories" ? "app_menu_link_active" : ""
+                }`}
+              >
+                <span className="flex-1 ml-3 whitespace-nowrap">
+                  Categories Settings
+                </span>
+              </Link>
+            </li>
+          </>
+        )}
 
         {/* Sales Section */}
         <li>
@@ -65,21 +86,39 @@ const MainSidebar = () => {
             <span className="font-semibold">Sales</span>
           </div>
         </li>
-        <li>
-          <Link
-            href="/sales-orders"
-            className={`app__menu_link ${
-              currentRoute === '/sales-orders' ? 'app_menu_link_active' : ''
-            }`}
-          >
-            <span className="flex-1 ml-3 whitespace-nowrap">Sales Orders</span>
-          </Link>
-        </li>
+        {user?.company_id !== "4" && (
+          <li>
+            <Link
+              href="/sales-orders"
+              className={`app__menu_link ${
+                currentRoute === "/sales-orders" ? "app_menu_link_active" : ""
+              }`}
+            >
+              <span className="flex-1 ml-3 whitespace-nowrap">
+                Sales Orders
+              </span>
+            </Link>
+          </li>
+        )}
+        {user?.company_id === "4" && (
+          <li>
+            <Link
+              href="/rmcorder"
+              className={`app__menu_link ${
+                currentRoute === "/rmcorder" ? "app_menu_link_active" : ""
+              }`}
+            >
+              <span className="flex-1 ml-3 whitespace-nowrap">
+                Sales Orders
+              </span>
+            </Link>
+          </li>
+        )}
         <li>
           <Link
             href="/sales-reports"
             className={`app__menu_link ${
-              currentRoute === '/sales-reports' ? 'app_menu_link_active' : ''
+              currentRoute === "/sales-reports" ? "app_menu_link_active" : ""
             }`}
           >
             <span className="flex-1 ml-3 whitespace-nowrap">Sales Reports</span>
@@ -96,7 +135,7 @@ const MainSidebar = () => {
           <Link
             href="/customers"
             className={`app__menu_link ${
-              currentRoute === '/customers' ? 'app_menu_link_active' : ''
+              currentRoute === "/customers" ? "app_menu_link_active" : ""
             }`}
           >
             <span className="flex-1 ml-3 whitespace-nowrap">Customer List</span>
@@ -104,38 +143,44 @@ const MainSidebar = () => {
         </li>
 
         {/* Suppliers Section */}
-        <li>
-          <div className="flex items-center text-gray-500 space-x-1 px-2">
-            <span className="font-semibold">Purchase Orders</span>
-          </div>
-        </li>
-        <li>
-          <Link
-            href="/purchaseorders"
-            className={`app__menu_link ${
-              currentRoute === '/purchaseorders' ? 'app_menu_link_active' : ''
-            }`}
-          >
-            <span className="flex-1 ml-3 whitespace-nowrap">
-              Purchase Orders List
-            </span>
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="/suppliers"
-            className={`app__menu_link ${
-              currentRoute === '/suppliers' ? 'app_menu_link_active' : ''
-            }`}
-          >
-            <span className="flex-1 ml-3 whitespace-nowrap">
-              Suppliers List
-            </span>
-          </Link>
-        </li>
+        {user?.company_id !== "4" && (
+          <>
+            <li>
+              <div className="flex items-center text-gray-500 space-x-1 px-2">
+                <span className="font-semibold">Purchase Orders</span>
+              </div>
+            </li>
+            <li>
+              <Link
+                href="/purchaseorders"
+                className={`app__menu_link ${
+                  currentRoute === "/purchaseorders"
+                    ? "app_menu_link_active"
+                    : ""
+                }`}
+              >
+                <span className="flex-1 ml-3 whitespace-nowrap">
+                  Purchase Orders List
+                </span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/suppliers"
+                className={`app__menu_link ${
+                  currentRoute === "/suppliers" ? "app_menu_link_active" : ""
+                }`}
+              >
+                <span className="flex-1 ml-3 whitespace-nowrap">
+                  Suppliers List
+                </span>
+              </Link>
+            </li>
+          </>
+        )}
 
         {/* Settings Section */}
-        {user?.user_metadata?.sffo_role === 'admin' && (
+        {user?.user_metadata?.sffo_role === "admin" && (
           <>
             <li>
               <div className="flex items-center text-gray-500 space-x-1 px-2">
@@ -158,7 +203,7 @@ const MainSidebar = () => {
               <Link
                 href="/users"
                 className={`app__menu_link ${
-                  currentRoute === '/users' ? 'app_menu_link_active' : ''
+                  currentRoute === "/users" ? "app_menu_link_active" : ""
                 }`}
               >
                 <span className="flex-1 ml-3 whitespace-nowrap">
@@ -170,7 +215,7 @@ const MainSidebar = () => {
         )}
       </ul>
     </>
-  )
-}
+  );
+};
 
-export default MainSidebar
+export default MainSidebar;

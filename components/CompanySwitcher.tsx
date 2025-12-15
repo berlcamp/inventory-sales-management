@@ -1,52 +1,63 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from "react";
 
 export default function CompanySwitcher() {
-  const [companyId, setCompanyId] = useState<string>('1')
-  const [isSwitching, setIsSwitching] = useState(false)
+  const [companyId, setCompanyId] = useState<string>("1");
+  const [isSwitching, setIsSwitching] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('company_id') || '1'
-    setCompanyId(saved)
-  }, [])
+    const saved = localStorage.getItem("company_id") || "1";
+    setCompanyId(saved);
+  }, []);
 
   const handleSwitch = (id: string) => {
-    setIsSwitching(true) // ✅ show overlay
-    setCompanyId(id)
-    localStorage.setItem('company_id', id)
+    setIsSwitching(true); // ✅ show overlay
+    setCompanyId(id);
+    localStorage.setItem("company_id", id);
 
     // Give the overlay a moment to render before reload
     setTimeout(() => {
-      window.location.reload()
-    }, 200)
-  }
+      window.location.reload();
+    }, 200);
+  };
 
   return (
     <>
       {/* Switcher UI */}
       <div className="flex items-center space-x-2 bg-gray-600 rounded-full p-1">
         <button
-          onClick={() => handleSwitch('1')}
+          onClick={() => handleSwitch("1")}
           disabled={isSwitching}
           className={`px-3 py-1 text-xs rounded-full cursor-pointer transition-colors ${
-            companyId === '1'
-              ? 'bg-blue-500 text-white font-semibold shadow'
-              : 'text-gray-300 hover:text-white'
+            companyId === "1"
+              ? "bg-blue-500 text-white font-semibold shadow"
+              : "text-gray-300 hover:text-white"
           }`}
         >
           HARDWARE
         </button>
         <button
-          onClick={() => handleSwitch('2')}
+          onClick={() => handleSwitch("2")}
           disabled={isSwitching}
           className={`px-3 py-1 text-xs rounded-full cursor-pointer transition-colors ${
-            companyId === '2'
-              ? 'bg-green-500 text-white font-semibold shadow'
-              : 'text-gray-300 hover:text-white'
+            companyId === "2"
+              ? "bg-green-500 text-white font-semibold shadow"
+              : "text-gray-300 hover:text-white"
           }`}
         >
           CEMENT
+        </button>
+        <button
+          onClick={() => handleSwitch("4")}
+          disabled={isSwitching}
+          className={`px-3 py-1 text-xs rounded-full cursor-pointer transition-colors ${
+            companyId === "4"
+              ? "bg-green-500 text-white font-semibold shadow"
+              : "text-gray-300 hover:text-white"
+          }`}
+        >
+          RMC
         </button>
       </div>
 
@@ -61,5 +72,5 @@ export default function CompanySwitcher() {
         </div>
       )}
     </>
-  )
+  );
 }

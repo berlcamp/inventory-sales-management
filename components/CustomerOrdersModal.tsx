@@ -1,12 +1,12 @@
 // components/AddItemTypeModal.tsx
-'use client'
+"use client";
 
-import { PaymentsModal } from '@/components/PaymentsModal'
-import { checkPDC } from '@/lib/helpers'
-import { supabase } from '@/lib/supabase/client'
-import { RootState } from '@/store'
-import { useAppSelector } from '@/store/hook'
-import { SalesOrder, SalesOrderItem } from '@/types'
+import { PaymentsModal } from "@/components/PaymentsModal";
+import { checkPDC } from "@/lib/helpers";
+import { supabase } from "@/lib/supabase/client";
+import { RootState } from "@/store";
+import { useAppSelector } from "@/store/hook";
+import { SalesOrder, SalesOrderItem } from "@/types";
 import {
   Dialog,
   DialogPanel,
@@ -15,90 +15,89 @@ import {
   MenuButton,
   MenuItem,
   MenuItems,
-  Transition
-} from '@headlessui/react'
-import { format } from 'date-fns'
-import { ChevronDown, PhilippinePeso } from 'lucide-react'
-import { Fragment, useEffect, useState } from 'react'
-import Php from './Php'
-import { Badge } from './ui/badge'
-import { Button } from './ui/button'
+  Transition,
+} from "@headlessui/react";
+import { format } from "date-fns";
+import { ChevronDown, PhilippinePeso } from "lucide-react";
+import { Fragment, useEffect, useState } from "react";
+import Php from "./Php";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 
 // Always update this on other pages
-type ItemType = SalesOrder
+type ItemType = SalesOrder;
 
 interface ModalProps {
-  isOpen: boolean
-  onClose: () => void
-  customerId: number
-  name: string
+  isOpen: boolean;
+  onClose: () => void;
+  customerId: number;
+  name: string;
 }
 
 export const CustomerOrdersModal = ({
   isOpen,
   onClose,
   customerId,
-  name
+  name,
 }: ModalProps) => {
   //
-  const [logs, setLogs] = useState<SalesOrder[] | null>([])
-  const [runningTotal, setRunningTotal] = useState(0)
-  const [totalReceivable, setTotalReceivable] = useState(0)
-  const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
-  const [modalPaymentOpen, setModalPaymentOpen] = useState(false)
+  const [logs, setLogs] = useState<SalesOrder[] | null>([]);
+  const [runningTotal, setRunningTotal] = useState(0);
+  const [totalReceivable, setTotalReceivable] = useState(0);
+  const [selectedItem, setSelectedItem] = useState<ItemType | null>(null);
+  const [modalPaymentOpen, setModalPaymentOpen] = useState(false);
 
-  const user = useAppSelector((state: RootState) => state.user.user)
+  const user = useAppSelector((state: RootState) => state.user.user);
 
   useEffect(() => {
     const initForm = async () => {
       const { data, error } = await supabase
-        .from('sales_orders')
+        .from("sales_orders")
         .select(
-          '*,payments:sales_order_payments(*),order_items:sales_order_items(*,product:product_id(*))'
+          "*,payments:sales_order_payments(*),order_items:sales_order_items(*,product:product_id(*))"
         )
-        .eq('company_id', user?.company_id)
-        .eq('customer_id', customerId)
-        .order('id', { ascending: false })
+        .eq("company_id", user?.company_id)
+        .eq("customer_id", customerId)
+        .order("id", { ascending: false });
 
       if (error) {
-        console.error('Error fetching sales orders:', error)
-        return
+        console.error("Error fetching sales orders:", error);
+        return;
       }
 
-      setLogs(data)
+      setLogs(data);
 
       if (data && data.length > 0) {
         const total = data.reduce((sum, order) => {
           const orderTotal = (order.order_items || []).reduce(
             (itemSum: number, item: SalesOrderItem) => {
-              return itemSum + (item.total || 0)
+              return itemSum + (item.total || 0);
             },
             0
-          )
-          return sum + orderTotal
-        }, 0)
-        setRunningTotal(total)
-
+          );
+          return sum + orderTotal + (order.other_charges_amount || 0);
+        }, 0);
+        setRunningTotal(total);
         const totalReceivable = data.reduce((sum, item) => {
           return (
-            sum + (item.payment_status !== 'Deposited' ? item.total_amount : 0)
-          )
-        }, 0)
-        setTotalReceivable(totalReceivable)
+            sum + (item.payment_status !== "Deposited" ? item.total_amount : 0)
+          );
+        }, 0);
+        setTotalReceivable(totalReceivable);
       } else {
-        setRunningTotal(0)
+        setRunningTotal(0);
       }
-    }
+    };
 
     if (isOpen) {
-      initForm()
+      initForm();
     }
-  }, [customerId, isOpen, user?.company_id])
+  }, [customerId, isOpen, user?.company_id]);
 
   const handleReceivePayment = (item: ItemType) => {
-    setSelectedItem(item)
-    setModalPaymentOpen(true)
-  }
+    setSelectedItem(item);
+    setModalPaymentOpen(true);
+  };
 
   return (
     <Dialog
@@ -130,18 +129,18 @@ export const CustomerOrdersModal = ({
             <div className="mt-4 text-right font-semibold space-y-2">
               <div className="text-nowrap">
                 Total Amount:&nbsp;
-                <Php />{' '}
+                <Php />{" "}
                 {runningTotal?.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
+                  maximumFractionDigits: 2,
                 })}
               </div>
               <div className="text-nowrap">
                 Total Receivable:&nbsp;
-                <Php />{' '}
+                <Php />{" "}
                 {totalReceivable?.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
+                  maximumFractionDigits: 2,
                 })}
               </div>
             </div>
@@ -164,8 +163,8 @@ export const CustomerOrdersModal = ({
                       {/* Date */}
                       <td className="app__td">
                         {item.date && !isNaN(new Date(item.date).getTime())
-                          ? format(new Date(item.date), 'MMMM dd, yyyy')
-                          : 'Invalid date'}
+                          ? format(new Date(item.date), "MMMM dd, yyyy")
+                          : "Invalid date"}
                       </td>
 
                       {/* SO Number */}
@@ -182,7 +181,7 @@ export const CustomerOrdersModal = ({
                             <div key={oi.id} className="flex items-center">
                               <span>
                                 {oi.product?.name?.length > 70
-                                  ? oi.product.name.slice(0, 70) + '…'
+                                  ? oi.product.name.slice(0, 70) + "…"
                                   : oi.product?.name}
                               </span>
                             </div>
@@ -202,10 +201,10 @@ export const CustomerOrdersModal = ({
                         {item.order_items.length > 0 &&
                           item.order_items.map((oi) => (
                             <div key={oi.id} className="text-nowrap">
-                              <Php />{' '}
+                              <Php />{" "}
                               {oi.unit_price.toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
+                                maximumFractionDigits: 2,
                               })}
                             </div>
                           ))}
@@ -214,10 +213,10 @@ export const CustomerOrdersModal = ({
                       {/* Total Amount */}
                       <td className="app__td text-right">
                         <span className="font-bold text-nowrap">
-                          <Php />{' '}
+                          <Php />{" "}
                           {item.total_amount.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
+                            maximumFractionDigits: 2,
                           })}
                         </span>
                       </td>
@@ -229,20 +228,20 @@ export const CustomerOrdersModal = ({
                             <MenuButton
                               as={Badge}
                               className={`flex items-center space-x-1 cursor-pointer ${
-                                item.payment_status === 'partial'
-                                  ? 'bg-orange-600 text-white'
-                                  : item.payment_status === 'Cheque'
-                                  ? 'bg-orange-600 text-white'
-                                  : item.payment_status === 'Hold'
-                                  ? 'bg-orange-600 text-white'
-                                  : item.payment_status === 'Deposited'
-                                  ? 'bg-green-600 text-white'
-                                  : ''
+                                item.payment_status === "partial"
+                                  ? "bg-orange-600 text-white"
+                                  : item.payment_status === "Cheque"
+                                  ? "bg-orange-600 text-white"
+                                  : item.payment_status === "Hold"
+                                  ? "bg-orange-600 text-white"
+                                  : item.payment_status === "Deposited"
+                                  ? "bg-green-600 text-white"
+                                  : ""
                               }`}
                             >
                               <span>
-                                {item.payment_status === 'partial'
-                                  ? 'Partially Paid'
+                                {item.payment_status === "partial"
+                                  ? "Partially Paid"
                                   : item.payment_status}
                               </span>
                               <ChevronDown className="h-4 w-4" />
@@ -291,17 +290,17 @@ export const CustomerOrdersModal = ({
                           )
                           .toLocaleString(undefined, {
                             minimumFractionDigits: 0,
-                            maximumFractionDigits: 2
+                            maximumFractionDigits: 2,
                           })}
                       </td>
                       <td className="app__td text-right"></td>
                       <td className="app__td text-right">
-                        <Php />{' '}
+                        <Php />{" "}
                         {logs
                           .reduce((sum, item) => sum + item.total_amount, 0)
                           .toLocaleString(undefined, {
                             minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
+                            maximumFractionDigits: 2,
                           })}
                       </td>
                     </tr>
@@ -327,5 +326,5 @@ export const CustomerOrdersModal = ({
         </DialogPanel>
       </div>
     </Dialog>
-  )
-}
+  );
+};
