@@ -91,7 +91,7 @@ export default function Page() {
   ]) // Add `dispatch` to dependency array
 
   return (
-    <div>
+    <div className="mb-24">
       <div className="app__title">
         <h1 className="text-3xl font-semibold">Sales Orders</h1>
         <div className="ml-auto space-x-2">

@@ -36,6 +36,7 @@ export default function Page() {
           { count: 'exact' }
         )
         .neq('id', 29) // Used for exist inventory
+        .neq('id', 29) // Used for exist inventory
         .eq('company_id', user?.company_id)
         .ilike('po_number', `%${filter}%`)
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
@@ -57,7 +58,7 @@ export default function Page() {
   }, [page, filter, dispatch, user?.company_id]) // Add `dispatch` to dependency array
 
   return (
-    <div>
+    <div className="mb-24">
       <div className="app__title">
         <h1 className="text-3xl font-semibold">Purchase Orders</h1>
         <Button onClick={() => setModalAddOpen(true)} className="ml-auto">
