@@ -63,6 +63,13 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
   >([]);
   const [washedSandStocks, setWashedSandStocks] = useState<ProductStock[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [manualPortlandCement, setManualPortlandCement] = useState<
+    number | null
+  >(null);
+  const [manualCrushedGravel, setManualCrushedGravel] = useState<number | null>(
+    null
+  );
+  const [manualWashedSand, setManualWashedSand] = useState<number | null>(null);
 
   const dispatch = useAppDispatch();
   const user = useAppSelector((state: RootState) => state.user.user);
@@ -86,15 +93,23 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
 
   // Calculate quantities needed per 10 cu.m
   // Per 10 cu.m: 100 bags Portland Cement, 1.5 cu.m Crushed Gravel, 1 cu.m Washed Sand
+  // Use manual values if provided, otherwise calculate from quantity
   const calculations = useMemo(() => {
     const batches = quantityCuM / 10; // Number of 10 cu.m batches
     return {
       batches,
-      portlandCementBags: batches * 100,
-      crushedGravelCuM: batches * 1.5,
-      washedSandCuM: batches * 1,
+      portlandCementBags:
+        manualPortlandCement !== null ? manualPortlandCement : batches * 100,
+      crushedGravelCuM:
+        manualCrushedGravel !== null ? manualCrushedGravel : batches * 1.5,
+      washedSandCuM: manualWashedSand !== null ? manualWashedSand : batches * 1,
     };
-  }, [quantityCuM]);
+  }, [
+    quantityCuM,
+    manualPortlandCement,
+    manualCrushedGravel,
+    manualWashedSand,
+  ]);
 
   // Fetch customers and product stocks
   useEffect(() => {
@@ -206,6 +221,10 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
       quantity_cu_m: 10,
       consumables: 0,
     });
+    // Reset manual overrides when modal opens
+    setManualPortlandCement(null);
+    setManualCrushedGravel(null);
+    setManualWashedSand(null);
   }, [isOpen, user?.company_id, form]);
 
   // Calculate total cost
@@ -612,22 +631,24 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
                         <FormControl>
                           <Input
                             type="number"
-                            step="10"
+                            step="any"
                             min="10"
                             className="app__input_standard"
                             placeholder="10"
                             {...field}
                             onChange={(e) => {
                               const value = parseFloat(e.target.value) || 0;
-                              // Round to nearest 10
-                              const rounded = Math.round(value / 10) * 10;
-                              field.onChange(Math.max(10, rounded));
+                              field.onChange(Math.max(10, value));
+                              // Reset manual overrides when main quantity changes
+                              setManualPortlandCement(null);
+                              setManualCrushedGravel(null);
+                              setManualWashedSand(null);
                             }}
                           />
                         </FormControl>
                         <FormMessage />
                         <p className="text-xs text-muted-foreground">
-                          Minimum: 10 cu.m, increments of 10 cu.m
+                          Minimum: 10 cu.m
                         </p>
                       </FormItem>
                     )}
@@ -661,41 +682,80 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
                 <div className="mt-6 p-4 bg-muted/40 rounded-md border border-border/60">
                   <h4 className="font-medium mb-3">Material Requirements</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">
-                        Portland Cement:
-                      </span>{" "}
-                      <span className="font-semibold">
-                        {calculations.portlandCementBags.toFixed(0)} bags
-                      </span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">
+                          Portland Cement:
+                        </span>
+                        <Input
+                          type="number"
+                          step="any"
+                          min="0"
+                          className="h-7 w-24 text-sm"
+                          value={calculations.portlandCementBags}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value) || 0;
+                            setManualPortlandCement(value >= 0 ? value : null);
+                          }}
+                        />
+                        <span className="text-muted-foreground text-xs">
+                          bags
+                        </span>
+                      </div>
                       {portlandCementStocks.length > 0 && (
-                        <span className="text-muted-foreground ml-2">
+                        <span className="text-muted-foreground text-xs">
                           @ ₱{portlandCementStocks[0].selling_price.toFixed(2)}
                         </span>
                       )}
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">
-                        Crushed Gravel:
-                      </span>{" "}
-                      <span className="font-semibold">
-                        {calculations.crushedGravelCuM.toFixed(2)} cu.m
-                      </span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">
+                          Crushed Gravel:
+                        </span>
+                        <Input
+                          type="number"
+                          step="any"
+                          min="0"
+                          className="h-7 w-24 text-sm"
+                          value={calculations.crushedGravelCuM}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value) || 0;
+                            setManualCrushedGravel(value >= 0 ? value : null);
+                          }}
+                        />
+                        <span className="text-muted-foreground text-xs">
+                          cu.m
+                        </span>
+                      </div>
                       {crushedGravelStocks.length > 0 && (
-                        <span className="text-muted-foreground ml-2">
+                        <span className="text-muted-foreground text-xs">
                           @ ₱{crushedGravelStocks[0].selling_price.toFixed(2)}
                         </span>
                       )}
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">
-                        Washed Sand:
-                      </span>{" "}
-                      <span className="font-semibold">
-                        {calculations.washedSandCuM.toFixed(2)} cu.m
-                      </span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">
+                          Washed Sand:
+                        </span>
+                        <Input
+                          type="number"
+                          step="any"
+                          min="0"
+                          className="h-7 w-24 text-sm"
+                          value={calculations.washedSandCuM}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value) || 0;
+                            setManualWashedSand(value >= 0 ? value : null);
+                          }}
+                        />
+                        <span className="text-muted-foreground text-xs">
+                          cu.m
+                        </span>
+                      </div>
                       {washedSandStocks.length > 0 && (
-                        <span className="text-muted-foreground ml-2">
+                        <span className="text-muted-foreground text-xs">
                           @ ₱{washedSandStocks[0].selling_price.toFixed(2)}
                         </span>
                       )}

@@ -113,9 +113,9 @@ export default function Page() {
       <div className="app__title">
         <h1 className="text-3xl font-normal">Product Stocks</h1>
         <div className="ml-auto space-x-2">
-          <Button variant="green" onClick={() => setModalAddOpen(true)}>
+          {/* <Button variant="green" onClick={() => setModalAddOpen(true)}>
             Add Stock
-          </Button>
+          </Button> */}
         </div>
       </div>
       {/* Hidden for now until we have a filter */}

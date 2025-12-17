@@ -143,41 +143,36 @@ const MainSidebar = () => {
         </li>
 
         {/* Suppliers Section */}
-        {user?.company_id !== "4" && (
-          <>
-            <li>
-              <div className="flex items-center text-gray-500 space-x-1 px-2">
-                <span className="font-semibold">Purchase Orders</span>
-              </div>
-            </li>
-            <li>
-              <Link
-                href="/purchaseorders"
-                className={`app__menu_link ${
-                  currentRoute === "/purchaseorders"
-                    ? "app_menu_link_active"
-                    : ""
-                }`}
-              >
-                <span className="flex-1 ml-3 whitespace-nowrap">
-                  Purchase Orders List
-                </span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/suppliers"
-                className={`app__menu_link ${
-                  currentRoute === "/suppliers" ? "app_menu_link_active" : ""
-                }`}
-              >
-                <span className="flex-1 ml-3 whitespace-nowrap">
-                  Suppliers List
-                </span>
-              </Link>
-            </li>
-          </>
-        )}
+
+        <li>
+          <div className="flex items-center text-gray-500 space-x-1 px-2">
+            <span className="font-semibold">Purchase Orders</span>
+          </div>
+        </li>
+        <li>
+          <Link
+            href="/purchaseorders"
+            className={`app__menu_link ${
+              currentRoute === "/purchaseorders" ? "app_menu_link_active" : ""
+            }`}
+          >
+            <span className="flex-1 ml-3 whitespace-nowrap">
+              Purchase Orders List
+            </span>
+          </Link>
+        </li>
+        <li>
+          <Link
+            href="/suppliers"
+            className={`app__menu_link ${
+              currentRoute === "/suppliers" ? "app_menu_link_active" : ""
+            }`}
+          >
+            <span className="flex-1 ml-3 whitespace-nowrap">
+              Suppliers List
+            </span>
+          </Link>
+        </li>
 
         {/* Settings Section */}
         {user?.user_metadata?.sffo_role === "admin" && (
