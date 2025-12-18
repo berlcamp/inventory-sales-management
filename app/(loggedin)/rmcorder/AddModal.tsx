@@ -32,7 +32,7 @@ import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
 
@@ -43,6 +43,16 @@ const FormSchema = z.object({
   so_number: z.string().min(1, "SO Number is required"),
   quantity_cu_m: z.coerce.number().min(10, "Minimum order is 10 cubic meters"),
   consumables: z.coerce.number().min(0, "Consumables must be 0 or greater"),
+  products: z
+    .array(
+      z.object({
+        product_stock_id: z.coerce.number().min(1, "Product stock is required"),
+        quantity: z.coerce
+          .number()
+          .min(0.01, "Quantity must be greater than 0"),
+      })
+    )
+    .min(1, "At least one product is required"),
 });
 
 type FormType = z.infer<typeof FormSchema>;
@@ -55,26 +65,16 @@ interface ModalProps {
 export const AddModal = ({ isOpen, onClose }: ModalProps) => {
   const [customers, setCustomers] = useState<Customer[] | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [portlandCementStocks, setPortlandCementStocks] = useState<
-    ProductStock[]
-  >([]);
-  const [crushedGravelStocks, setCrushedGravelStocks] = useState<
-    ProductStock[]
-  >([]);
-  const [washedSandStocks, setWashedSandStocks] = useState<ProductStock[]>([]);
+  const [productsList, setProductsList] = useState<ProductStock[] | null>(null);
   const [loadingProducts, setLoadingProducts] = useState(false);
-  const [manualPortlandCement, setManualPortlandCement] = useState<
-    number | null
-  >(null);
-  const [manualCrushedGravel, setManualCrushedGravel] = useState<number | null>(
-    null
-  );
-  const [manualWashedSand, setManualWashedSand] = useState<number | null>(null);
 
   const dispatch = useAppDispatch();
   const user = useAppSelector((state: RootState) => state.user.user);
 
   const [open, setOpen] = useState(false);
+  const [openProductDropdowns, setOpenProductDropdowns] = useState<{
+    [key: number]: boolean;
+  }>({});
 
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
@@ -83,33 +83,25 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
       po_number: "",
       so_number: "",
       customer_id: 0,
-      quantity_cu_m: 1,
+      quantity_cu_m: 10,
       consumables: 0,
+      products: [
+        {
+          product_stock_id: 0,
+          quantity: 0,
+        },
+      ],
     },
   });
 
-  const quantityCuM = form.watch("quantity_cu_m");
-  const consumables = form.watch("consumables");
+  const { control } = form;
+  const { fields, append, remove } = useFieldArray({
+    control: control,
+    name: "products",
+  });
 
-  // Calculate quantities needed per 10 cu.m
-  // Per 10 cu.m: 100 bags Portland Cement, 1.5 cu.m Crushed Gravel, 1 cu.m Washed Sand
-  // Use manual values if provided, otherwise calculate from quantity
-  const calculations = useMemo(() => {
-    const batches = quantityCuM / 10; // Number of 10 cu.m batches
-    return {
-      batches,
-      portlandCementBags:
-        manualPortlandCement !== null ? manualPortlandCement : batches * 100,
-      crushedGravelCuM:
-        manualCrushedGravel !== null ? manualCrushedGravel : batches * 1.5,
-      washedSandCuM: manualWashedSand !== null ? manualWashedSand : batches * 1,
-    };
-  }, [
-    quantityCuM,
-    manualPortlandCement,
-    manualCrushedGravel,
-    manualWashedSand,
-  ]);
+  const consumables = useWatch({ control, name: "consumables" });
+  const products = useWatch({ control, name: "products" });
 
   // Fetch customers and product stocks
   useEffect(() => {
@@ -127,82 +119,20 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
 
         setCustomers(customersData);
 
-        // First, fetch product IDs for Portland Cement
-        const { data: portlandProducts } = await supabase
-          .from("products")
-          .select("id")
-          .eq("company_id", user?.company_id)
-          .ilike("name", "%portland cement%");
-
-        const portlandProductIds = portlandProducts?.map((p) => p.id) || [];
-
-        // Fetch Portland Cement stocks
-        const { data: portlandData } = await supabase
+        // Fetch all product stocks with remaining quantity > 0
+        const { data: productsData } = await supabase
           .from("product_stocks")
           .select(
             "*,product:product_id(*),purchase_order:purchase_order_id(po_number)"
           )
           .gt("remaining_quantity", 0)
           .eq("company_id", user?.company_id)
-          .in("product_id", portlandProductIds)
           .order("purchase_date", { ascending: true });
 
-        console.log("portlandData", portlandData);
+        setProductsList(productsData || []);
 
-        // First, fetch product IDs for Crushed Gravel
-        const { data: gravelProducts } = await supabase
-          .from("products")
-          .select("id")
-          .eq("company_id", user?.company_id)
-          .ilike("name", "%crushed gravel%");
-
-        const gravelProductIds = gravelProducts?.map((p) => p.id) || [];
-
-        // Fetch Crushed Gravel stocks
-        const { data: gravelData } = await supabase
-          .from("product_stocks")
-          .select(
-            "*,product:product_id(*),purchase_order:purchase_order_id(po_number)"
-          )
-          .gt("remaining_quantity", 0)
-          .eq("company_id", user?.company_id)
-          .in("product_id", gravelProductIds)
-          .order("purchase_date", { ascending: true });
-
-        // First, fetch product IDs for Washed Sand
-        const { data: sandProducts } = await supabase
-          .from("products")
-          .select("id")
-          .eq("company_id", user?.company_id)
-          .ilike("name", "%washed sand%");
-
-        const sandProductIds = sandProducts?.map((p) => p.id) || [];
-
-        // Fetch Washed Sand stocks
-        const { data: sandData } = await supabase
-          .from("product_stocks")
-          .select(
-            "*,product:product_id(*),purchase_order:purchase_order_id(po_number)"
-          )
-          .gt("remaining_quantity", 0)
-          .eq("company_id", user?.company_id)
-          .in("product_id", sandProductIds)
-          .order("purchase_date", { ascending: true });
-
-        setPortlandCementStocks(portlandData || []);
-        setCrushedGravelStocks(gravelData || []);
-        setWashedSandStocks(sandData || []);
-
-        if (!portlandData || portlandData.length === 0) {
-          toast.error(
-            "No Portland Cement stock found. Please add stock first."
-          );
-        }
-        if (!gravelData || gravelData.length === 0) {
-          toast.error("No Crushed Gravel stock found. Please add stock first.");
-        }
-        if (!sandData || sandData.length === 0) {
-          toast.error("No Washed Sand stock found. Please add stock first.");
+        if (!productsData || productsData.length === 0) {
+          toast.error("No product stocks found. Please add stock first.");
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -220,98 +150,72 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
       customer_id: 0,
       quantity_cu_m: 10,
       consumables: 0,
+      products: [
+        {
+          product_stock_id: 0,
+          quantity: 0,
+        },
+      ],
     });
-    // Reset manual overrides when modal opens
-    setManualPortlandCement(null);
-    setManualCrushedGravel(null);
-    setManualWashedSand(null);
   }, [isOpen, user?.company_id, form]);
 
   // Calculate total cost
   const totalCost = useMemo(() => {
     let total = 0;
 
-    // Portland Cement cost (using first available stock's selling_price)
-    if (portlandCementStocks.length > 0) {
-      const price = portlandCementStocks[0].selling_price;
-      total += calculations.portlandCementBags * price;
-    }
-
-    // Crushed Gravel cost
-    if (crushedGravelStocks.length > 0) {
-      const price = crushedGravelStocks[0].selling_price;
-      total += calculations.crushedGravelCuM * price;
-    }
-
-    // Washed Sand cost
-    if (washedSandStocks.length > 0) {
-      const price = washedSandStocks[0].selling_price;
-      total += calculations.washedSandCuM * price;
-    }
+    // Calculate cost for each selected product
+    products.forEach((product) => {
+      if (product.product_stock_id && product.quantity > 0) {
+        const productStock = productsList?.find(
+          (p) => p.id === product.product_stock_id
+        );
+        if (productStock) {
+          total += productStock.selling_price * product.quantity;
+        }
+      }
+    });
 
     // Add consumables
     total += Number(consumables) || 0;
 
     return total;
-  }, [
-    portlandCementStocks,
-    crushedGravelStocks,
-    washedSandStocks,
-    consumables,
-    calculations.portlandCementBags,
-    calculations.crushedGravelCuM,
-    calculations.washedSandCuM,
-  ]);
+  }, [products, productsList, consumables]);
 
   const onSubmit = async (formdata: FormType) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      // Validate that we have required stocks
-      if (portlandCementStocks.length === 0) {
-        toast.error("Portland Cement stock is required");
-        setIsSubmitting(false);
-        return;
-      }
-      if (crushedGravelStocks.length === 0) {
-        toast.error("Crushed Gravel stock is required");
-        setIsSubmitting(false);
-        return;
-      }
-      if (washedSandStocks.length === 0) {
-        toast.error("Washed Sand stock is required");
+      // Validate that we have products
+      if (!formdata.products || formdata.products.length === 0) {
+        toast.error("At least one product is required");
         setIsSubmitting(false);
         return;
       }
 
       // Validate quantities don't exceed available stock
-      const portlandStock = portlandCementStocks[0];
-      const gravelStock = crushedGravelStocks[0];
-      const sandStock = washedSandStocks[0];
-
-      if (calculations.portlandCementBags > portlandStock.remaining_quantity) {
-        toast.error(
-          `Insufficient Portland Cement stock. Available: ${portlandStock.remaining_quantity} bags, Required: ${calculations.portlandCementBags} bags`
+      for (const product of formdata.products) {
+        const productStock = productsList?.find(
+          (p) => p.id === product.product_stock_id
         );
-        setIsSubmitting(false);
-        return;
-      }
 
-      if (calculations.crushedGravelCuM > gravelStock.remaining_quantity) {
-        toast.error(
-          `Insufficient Crushed Gravel stock. Available: ${gravelStock.remaining_quantity} cu.m, Required: ${calculations.crushedGravelCuM} cu.m`
-        );
-        setIsSubmitting(false);
-        return;
-      }
+        if (!productStock) {
+          toast.error("Selected product stock not found");
+          setIsSubmitting(false);
+          return;
+        }
 
-      if (calculations.washedSandCuM > sandStock.remaining_quantity) {
-        toast.error(
-          `Insufficient Washed Sand stock. Available: ${sandStock.remaining_quantity} cu.m, Required: ${calculations.washedSandCuM} cu.m`
-        );
-        setIsSubmitting(false);
-        return;
+        if (product.quantity > productStock.remaining_quantity) {
+          toast.error(
+            `Insufficient stock for ${
+              productStock.product?.name || "product"
+            }. Available: ${productStock.remaining_quantity} ${
+              productStock.product?.unit || ""
+            }, Required: ${product.quantity}`
+          );
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       // Create sales order
@@ -341,73 +245,49 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
 
       const newPOId = insertedPO[0].id;
 
-      // Create sales order items
-      const salesOrderItems = [
-        {
+      // Create sales order items from selected products
+      const salesOrderItems = formdata.products.map((product) => {
+        const productStock = productsList?.find(
+          (p) => p.id === product.product_stock_id
+        );
+        if (!productStock) {
+          throw new Error(
+            `Product stock ${product.product_stock_id} not found`
+          );
+        }
+        return {
           sales_order_id: newPOId,
-          product_stock_id: portlandStock.id,
-          product_id: portlandStock.product_id,
-          quantity: calculations.portlandCementBags,
-          unit_price: portlandStock.selling_price,
+          product_stock_id: product.product_stock_id,
+          product_id: productStock.product_id,
+          quantity: product.quantity,
+          unit_price: productStock.selling_price,
           discount: 0,
-          total: calculations.portlandCementBags * portlandStock.selling_price,
+          total: product.quantity * productStock.selling_price,
           company_id: user?.company_id,
-        },
-        {
-          sales_order_id: newPOId,
-          product_stock_id: gravelStock.id,
-          product_id: gravelStock.product_id,
-          quantity: calculations.crushedGravelCuM,
-          unit_price: gravelStock.selling_price,
-          discount: 0,
-          total: calculations.crushedGravelCuM * gravelStock.selling_price,
-          company_id: user?.company_id,
-        },
-        {
-          sales_order_id: newPOId,
-          product_stock_id: sandStock.id,
-          product_id: sandStock.product_id,
-          quantity: calculations.washedSandCuM,
-          unit_price: sandStock.selling_price,
-          discount: 0,
-          total: calculations.washedSandCuM * sandStock.selling_price,
-          company_id: user?.company_id,
-        },
-      ];
+        };
+      });
 
       // Prepare Redux items with proper product_stock references
-      const salesOrderItemsRedux = [
-        {
+      const salesOrderItemsRedux = formdata.products.map((product) => {
+        const productStock = productsList?.find(
+          (p) => p.id === product.product_stock_id
+        );
+        if (!productStock) {
+          throw new Error(
+            `Product stock ${product.product_stock_id} not found`
+          );
+        }
+        return {
           sales_order_id: newPOId,
-          product_stock_id: portlandStock.id,
-          product_stock: portlandStock,
-          product_id: portlandStock.product_id,
-          quantity: calculations.portlandCementBags,
-          unit_price: portlandStock.selling_price,
+          product_stock_id: product.product_stock_id,
+          product_stock: productStock,
+          product_id: productStock.product_id,
+          quantity: product.quantity,
+          unit_price: productStock.selling_price,
           discount: 0,
-          total: calculations.portlandCementBags * portlandStock.selling_price,
-        },
-        {
-          sales_order_id: newPOId,
-          product_stock_id: gravelStock.id,
-          product_stock: gravelStock,
-          product_id: gravelStock.product_id,
-          quantity: calculations.crushedGravelCuM,
-          unit_price: gravelStock.selling_price,
-          discount: 0,
-          total: calculations.crushedGravelCuM * gravelStock.selling_price,
-        },
-        {
-          sales_order_id: newPOId,
-          product_stock_id: sandStock.id,
-          product_stock: sandStock,
-          product_id: sandStock.product_id,
-          quantity: calculations.washedSandCuM,
-          unit_price: sandStock.selling_price,
-          discount: 0,
-          total: calculations.washedSandCuM * sandStock.selling_price,
-        },
-      ];
+          total: product.quantity * productStock.selling_price,
+        };
+      });
 
       // Add consumables as other_charges if > 0
       if (formdata.consumables > 0) {
@@ -639,10 +519,6 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
                             onChange={(e) => {
                               const value = parseFloat(e.target.value) || 0;
                               field.onChange(Math.max(10, value));
-                              // Reset manual overrides when main quantity changes
-                              setManualPortlandCement(null);
-                              setManualCrushedGravel(null);
-                              setManualWashedSand(null);
                             }}
                           />
                         </FormControl>
@@ -678,98 +554,241 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
                   />
                 </div>
 
-                {/* Material Calculations Display */}
+                {/* Material Requirements */}
                 <div className="mt-6 p-4 bg-muted/40 rounded-md border border-border/60">
-                  <h4 className="font-medium mb-3">Material Requirements</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">
-                          Portland Cement:
-                        </span>
-                        <Input
-                          type="number"
-                          step="any"
-                          min="0"
-                          className="h-7 w-24 text-sm"
-                          value={calculations.portlandCementBags}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value) || 0;
-                            setManualPortlandCement(value >= 0 ? value : null);
-                          }}
-                        />
-                        <span className="text-muted-foreground text-xs">
-                          bags
-                        </span>
-                      </div>
-                      {portlandCementStocks.length > 0 && (
-                        <span className="text-muted-foreground text-xs">
-                          @ ₱{portlandCementStocks[0].selling_price.toFixed(2)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">
-                          Crushed Gravel:
-                        </span>
-                        <Input
-                          type="number"
-                          step="any"
-                          min="0"
-                          className="h-7 w-24 text-sm"
-                          value={calculations.crushedGravelCuM}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value) || 0;
-                            setManualCrushedGravel(value >= 0 ? value : null);
-                          }}
-                        />
-                        <span className="text-muted-foreground text-xs">
-                          cu.m
-                        </span>
-                      </div>
-                      {crushedGravelStocks.length > 0 && (
-                        <span className="text-muted-foreground text-xs">
-                          @ ₱{crushedGravelStocks[0].selling_price.toFixed(2)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">
-                          Washed Sand:
-                        </span>
-                        <Input
-                          type="number"
-                          step="any"
-                          min="0"
-                          className="h-7 w-24 text-sm"
-                          value={calculations.washedSandCuM}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value) || 0;
-                            setManualWashedSand(value >= 0 ? value : null);
-                          }}
-                        />
-                        <span className="text-muted-foreground text-xs">
-                          cu.m
-                        </span>
-                      </div>
-                      {washedSandStocks.length > 0 && (
-                        <span className="text-muted-foreground text-xs">
-                          @ ₱{washedSandStocks[0].selling_price.toFixed(2)}
-                        </span>
-                      )}
-                    </div>
-                    <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-medium">Material Requirements</h4>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        append({
+                          product_stock_id: 0,
+                          quantity: 0,
+                        })
+                      }
+                    >
+                      Add Product
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    {fields.map((field, index) => {
+                      const selectedProductStock = productsList?.find(
+                        (p) =>
+                          p.id.toString() ===
+                          form
+                            .watch(`products.${index}.product_stock_id`)
+                            ?.toString()
+                      );
+                      return (
+                        <div
+                          key={field.id}
+                          className="flex items-start gap-4 p-3 bg-background rounded-md border"
+                        >
+                          <div className="flex-1">
+                            <FormField
+                              control={form.control}
+                              name={`products.${index}.product_stock_id`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-sm">
+                                    Product Stock
+                                  </FormLabel>
+                                  <Popover
+                                    open={openProductDropdowns[index] || false}
+                                    onOpenChange={(open) =>
+                                      setOpenProductDropdowns({
+                                        ...openProductDropdowns,
+                                        [index]: open,
+                                      })
+                                    }
+                                  >
+                                    <PopoverTrigger asChild>
+                                      <FormControl>
+                                        <Button
+                                          variant="outline"
+                                          role="combobox"
+                                          className={cn(
+                                            "w-full justify-between hover:bg-white",
+                                            !field.value &&
+                                              "text-muted-foreground"
+                                          )}
+                                        >
+                                          <span className="truncate">
+                                            {selectedProductStock
+                                              ? `${
+                                                  selectedProductStock.product
+                                                    ?.name || ""
+                                                }${
+                                                  selectedProductStock.product
+                                                    ?.sku
+                                                    ? ` - ${selectedProductStock.product.sku}`
+                                                    : ""
+                                                } (Available: ${
+                                                  selectedProductStock.remaining_quantity
+                                                } ${
+                                                  selectedProductStock.product
+                                                    ?.unit || ""
+                                                })`
+                                              : "Select product stock"}
+                                          </span>
+                                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                      </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-full p-0">
+                                      <Command>
+                                        <CommandInput placeholder="Search product..." />
+                                        <CommandList>
+                                          <CommandEmpty>
+                                            No product found.
+                                          </CommandEmpty>
+                                          <CommandGroup>
+                                            {productsList?.map((s) => {
+                                              const nameSku = s.product?.name
+                                                ? `${s.product.name}${
+                                                    s.product.sku
+                                                      ? ` - ${s.product.sku}`
+                                                      : ""
+                                                  }-${s.id}`
+                                                : "";
+
+                                              // Prevent selecting same product_stock_id twice
+                                              const isAlreadySelected = form
+                                                .watch("products")
+                                                .some(
+                                                  (p, i) =>
+                                                    p?.product_stock_id ===
+                                                      s.id && i !== index
+                                                );
+
+                                              return (
+                                                <CommandItem
+                                                  key={s.id}
+                                                  value={nameSku}
+                                                  disabled={isAlreadySelected}
+                                                  onSelect={(selectedName) => {
+                                                    if (isAlreadySelected)
+                                                      return;
+
+                                                    const selectedProduct =
+                                                      productsList.find(
+                                                        (sup) => {
+                                                          const fullName = sup
+                                                            .product?.name
+                                                            ? `${
+                                                                sup.product.name
+                                                              }${
+                                                                sup.product.sku
+                                                                  ? ` - ${sup.product.sku}`
+                                                                  : ""
+                                                              }-${sup.id}`
+                                                            : "";
+                                                          return (
+                                                            fullName.toLowerCase() ===
+                                                            selectedName.toLowerCase()
+                                                          );
+                                                        }
+                                                      );
+                                                    if (selectedProduct) {
+                                                      field.onChange(
+                                                        selectedProduct.id
+                                                      );
+                                                      setOpenProductDropdowns({
+                                                        ...openProductDropdowns,
+                                                        [index]: false,
+                                                      });
+                                                    }
+                                                  }}
+                                                >
+                                                  <Check
+                                                    className={cn(
+                                                      "mr-2 h-4 w-4",
+                                                      s.id.toString() ===
+                                                        field.value?.toString()
+                                                        ? "opacity-100"
+                                                        : "opacity-0"
+                                                    )}
+                                                  />
+                                                  {s.product?.name || ""}
+                                                  {s.product?.sku
+                                                    ? ` - ${s.product.sku}`
+                                                    : ""}{" "}
+                                                  (Available:{" "}
+                                                  {s.remaining_quantity}{" "}
+                                                  {s.product?.unit || ""})
+                                                </CommandItem>
+                                              );
+                                            })}
+                                          </CommandGroup>
+                                        </CommandList>
+                                      </Command>
+                                    </PopoverContent>
+                                  </Popover>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <div className="w-32">
+                            <FormField
+                              control={form.control}
+                              name={`products.${index}.quantity`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-sm">
+                                    Quantity
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      step="any"
+                                      min="0.01"
+                                      className="app__input_standard"
+                                      placeholder="0"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                  {selectedProductStock && (
+                                    <p className="text-xs text-muted-foreground">
+                                      @ ₱
+                                      {selectedProductStock.selling_price.toFixed(
+                                        2
+                                      )}
+                                      /
+                                      {selectedProductStock.product?.unit || ""}
+                                    </p>
+                                  )}
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          {fields.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="mt-8"
+                              onClick={() => remove(index)}
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-border/60 space-y-2">
+                    <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">
                         Consumables:
-                      </span>{" "}
+                      </span>
                       <span className="font-semibold">
                         ₱{(Number(consumables) || 0).toFixed(2)}
                       </span>
                     </div>
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-border/60">
                     <div className="flex justify-between items-center">
                       <span className="font-semibold">Total Amount:</span>
                       <span className="text-lg font-bold">

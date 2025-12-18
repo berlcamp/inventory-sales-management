@@ -42,7 +42,6 @@ export default function Page() {
           { count: "exact" }
         )
         .eq("company_id", user?.company_id)
-        .ilike("so_number", "RMC%") // Filter for RMC orders
         .order("date", { ascending: false })
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1);
 

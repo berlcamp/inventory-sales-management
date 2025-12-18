@@ -29,56 +29,49 @@ const MainSidebar = () => {
             <span className="flex-1 ml-3 whitespace-nowrap">Overview</span>
           </Link>
         </li>
-
         {/* Products Section */}
         <li>
           <div className="flex items-center text-gray-500 space-x-1 px-2">
             <span className="font-semibold">Products</span>
           </div>
         </li>
-        {user?.company_id === "4" && (
-          <li>
-            <Link
-              href="/productstocks"
-              className={`app__menu_link ${
-                currentRoute === "/productstocks" ? "app_menu_link_active" : ""
-              }`}
-            >
-              <span className="flex-1 ml-3 whitespace-nowrap">
-                Product Stocks
-              </span>
-            </Link>
-          </li>
-        )}
-        {user?.company_id !== "4" && (
-          <>
-            <li>
-              <Link
-                href="/products2"
-                className={`app__menu_link ${
-                  currentRoute === "/products2" ? "app_menu_link_active" : ""
-                }`}
-              >
-                <span className="flex-1 ml-3 whitespace-nowrap">
-                  Product List
-                </span>
-              </Link>
-            </li>
 
-            <li>
-              <Link
-                href="/categories"
-                className={`app__menu_link ${
-                  currentRoute === "/categories" ? "app_menu_link_active" : ""
-                }`}
-              >
-                <span className="flex-1 ml-3 whitespace-nowrap">
-                  Categories Settings
-                </span>
-              </Link>
-            </li>
-          </>
-        )}
+        <li>
+          <Link
+            href="/products2"
+            className={`app__menu_link ${
+              currentRoute === "/products2" ? "app_menu_link_active" : ""
+            }`}
+          >
+            <span className="flex-1 ml-3 whitespace-nowrap">Product List</span>
+          </Link>
+        </li>
+
+        <li>
+          <Link
+            href="/products3"
+            className={`app__menu_link ${
+              currentRoute === "/products3" ? "app_menu_link_active" : ""
+            }`}
+          >
+            <span className="flex-1 ml-3 whitespace-nowrap">
+              Products Settings
+            </span>
+          </Link>
+        </li>
+
+        <li>
+          <Link
+            href="/categories"
+            className={`app__menu_link ${
+              currentRoute === "/categories" ? "app_menu_link_active" : ""
+            }`}
+          >
+            <span className="flex-1 ml-3 whitespace-nowrap">
+              Categories Settings
+            </span>
+          </Link>
+        </li>
 
         {/* Sales Section */}
         <li>

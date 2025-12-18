@@ -1,114 +1,114 @@
 // components/AddItemTypeModal.tsx
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { supabase } from '@/lib/supabase/client'
-import { RootState } from '@/store'
-import { useAppDispatch, useAppSelector } from '@/store/hook'
-import { addItem, updateList } from '@/store/listSlice'
-import { Category } from '@/types'
-import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import toast from 'react-hot-toast'
-import { z } from 'zod'
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/lib/supabase/client";
+import { RootState } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store/hook";
+import { addItem, updateList } from "@/store/listSlice";
+import { Category } from "@/types";
+import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { z } from "zod";
 
 // Defaults
-type ItemType = Category
+type ItemType = Category;
 type FormType = {
-  name: string
-}
-const table = 'categories'
-const title = 'Category'
+  name: string;
+};
+const table = "categories";
+const title = "Category";
 
 interface ModalProps {
-  isOpen: boolean
-  onClose: () => void
-  editData?: ItemType | null // Optional prop for editing existing item
+  isOpen: boolean;
+  onClose: () => void;
+  editData?: ItemType | null; // Optional prop for editing existing item
 }
 
 const FormSchema = z.object({
-  name: z.string().min(1, 'Category Name is required')
-})
+  name: z.string().min(1, "Category Name is required"),
+});
 
 export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   //
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const dispatch = useAppDispatch()
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const dispatch = useAppDispatch();
 
-  const user = useAppSelector((state: RootState) => state.user.user)
+  const user = useAppSelector((state: RootState) => state.user.user);
 
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: editData ? editData.name : ''
-    }
-  })
+      name: editData ? editData.name : "",
+    },
+  });
 
   // Submit handler
   const onSubmit = async (data: FormType) => {
-    if (isSubmitting) return // 🚫 Prevent double-submit
-    setIsSubmitting(true)
+    if (isSubmitting) return; // 🚫 Prevent double-submit
+    setIsSubmitting(true);
 
     try {
       const newData = {
         name: data.name,
-        company_id: user?.company_id
-      }
+        company_id: user?.company_id,
+      };
 
       // If exists (editing), update it
       if (editData?.id) {
         const { error } = await supabase
           .from(table)
           .update(newData)
-          .eq('id', editData.id)
+          .eq("id", editData.id);
 
         if (error) {
-          console.error('Error updating:', error)
+          console.error("Error updating:", error);
         } else {
           //Update list on redux
-          dispatch(updateList({ ...newData, id: editData.id })) // ✅ Update Redux with new data
-          onClose()
+          dispatch(updateList({ ...newData, id: editData.id })); // ✅ Update Redux with new data
+          onClose();
         }
       } else {
         // Add new one
         const { data, error } = await supabase
           .from(table)
           .insert([newData])
-          .select()
+          .select();
 
         if (error) {
-          console.error('Error adding:', error)
+          console.error("Error adding:", error);
         } else {
           // Insert new item to Redux
-          dispatch(addItem({ ...newData, id: data[0].id }))
-          onClose()
+          dispatch(addItem({ ...newData, id: data[0].id }));
+          onClose();
         }
       }
 
-      toast.success('Successfully saved!')
+      toast.success("Successfully saved!");
     } catch (err) {
-      console.error('Submission error:', err)
+      console.error("Submission error:", err);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   useEffect(() => {
     form.reset({
-      name: editData?.name || ''
-    })
-  }, [form, editData, isOpen])
+      name: editData?.name || "",
+    });
+  }, [form, editData, isOpen]);
 
   return (
     <Dialog
@@ -129,7 +129,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           {/* Sticky Header */}
           <div className="app__modal_dialog_title_container">
             <DialogTitle as="h3" className="text-base font-medium">
-              {editData ? 'Edit' : 'Add'} {title}
+              {editData ? "Edit" : "Add"} {title}
             </DialogTitle>
           </div>
           {/* Scrollable Form Content */}
@@ -166,9 +166,9 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                   </Button>
                   <Button type="submit">
                     {editData ? (
-                      'Update'
+                      "Update"
                     ) : (
-                      <span>{isSubmitting ? 'Saving..' : 'Save'}</span>
+                      <span>{isSubmitting ? "Saving.." : "Save"}</span>
                     )}
                   </Button>
                 </div>
@@ -178,5 +178,5 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         </DialogPanel>
       </div>
     </Dialog>
-  )
-}
+  );
+};
