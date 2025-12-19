@@ -65,8 +65,6 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useAppDispatch();
 
-  const list = useAppSelector((state: RootState) => state.list.value);
-
   const user = useAppSelector((state: RootState) => state.user.user);
 
   // Category dropdown

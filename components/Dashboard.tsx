@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-'use client'
+"use client";
 
 import {
   Card,
@@ -7,14 +7,14 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle
-} from '@/components/ui/card'
-import { supabase } from '@/lib/supabase/client'
-import { RootState } from '@/store'
-import { useAppSelector } from '@/store/hook'
-import { SalesOrderItem } from '@/types'
-import { format, parseISO, startOfWeek } from 'date-fns'
-import { useEffect, useState } from 'react'
+  CardTitle,
+} from "@/components/ui/card";
+import { supabase } from "@/lib/supabase/client";
+import { RootState } from "@/store";
+import { useAppSelector } from "@/store/hook";
+import { SalesOrderItem } from "@/types";
+import { format, parseISO, startOfWeek } from "date-fns";
+import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -24,64 +24,64 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis
-} from 'recharts'
-import LoadingSkeleton from './LoadingSkeleton'
-import { OutstandingPayments } from './OutstandingPayments'
-import Php from './Php'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
+  YAxis,
+} from "recharts";
+import LoadingSkeleton from "./LoadingSkeleton";
+import { OutstandingPayments } from "./OutstandingPayments";
+import Php from "./Php";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 interface LowStockProductType {
-  name: string
-  current_quantity: string
-  category: any
+  name: string;
+  current_quantity: string;
+  category: any;
 }
 
 interface DashboardMetrics {
-  totalCostValue: number
-  totalPriceValue: number
-  TodaySales: number
-  totalSales: number
-  totalSalesOrders: number
-  totalPurchases: number
-  outstandingPayments: number
-  lowStockProducts: LowStockProductType[] | [] | null
-  bestSellingProducts: { name: string; quantity: number }[]
+  totalCostValue: number;
+  totalPriceValue: number;
+  TodaySales: number;
+  totalSales: number;
+  totalSalesOrders: number;
+  totalPurchases: number;
+  outstandingPayments: number;
+  lowStockProducts: LowStockProductType[] | [] | null;
+  bestSellingProducts: { name: string; quantity: number }[];
 }
 
 interface WeeklySales {
-  week: string
-  total: number
+  week: string;
+  total: number;
 }
 
 export default function AdminDashboard() {
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
-  const [showAllLowStock, setShowAllLowStock] = useState(false)
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [showAllLowStock, setShowAllLowStock] = useState(false);
 
-  const [isViewOutstandingOpen, setIsViewOutstandingOpen] = useState(false)
-  const [salesData, setSalesData] = useState<WeeklySales[]>([])
+  const [isViewOutstandingOpen, setIsViewOutstandingOpen] = useState(false);
+  const [salesData, setSalesData] = useState<WeeklySales[]>([]);
   const [topSellingCustomers, setTopSellingCustomers] = useState<
     {
-      name: string
-      total: number
+      name: string;
+      total: number;
     }[]
-  >()
+  >();
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = new Date().toISOString().split("T")[0];
 
-  const [dateFrom, setDateFrom] = useState(todayStr)
-  const [dateTo, setDateTo] = useState(todayStr)
+  const [dateFrom, setDateFrom] = useState(todayStr);
+  const [dateTo, setDateTo] = useState(todayStr);
 
-  const user = useAppSelector((state: RootState) => state.user.user)
+  const user = useAppSelector((state: RootState) => state.user.user);
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date().toISOString().split("T")[0];
 
       // Use fallback if dates are empty
-      const from = dateFrom || '2000-01-01' // ✅ Default to year 2000
-      const to = dateTo || today
+      const from = dateFrom || "2000-01-01"; // ✅ Default to year 2000
+      const to = dateTo || today;
 
       const [
         productStocks,
@@ -91,76 +91,76 @@ export default function AdminDashboard() {
         purchasesRes,
         lowStockRes,
         salesCustomerRes,
-        bestSellersRes
+        bestSellersRes,
       ] = await Promise.all([
         supabase
-          .from('product_stocks')
-          .select('quantity, cost, selling_price, remaining_quantity, missing')
-          .eq('company_id', user?.company_id),
+          .from("product_stocks")
+          .select("quantity, cost, selling_price, remaining_quantity, missing")
+          .eq("company_id", user?.company_id),
 
         supabase
-          .from('sales_orders')
-          .select('total_amount')
-          .eq('company_id', user?.company_id)
-          .gte('date', from)
-          .lte('date', to), // ✅ Chart
+          .from("sales_orders")
+          .select("total_amount")
+          .eq("company_id", user?.company_id)
+          .gte("date", from)
+          .lte("date", to), // ✅ Chart
 
         supabase
-          .from('sales_orders')
-          .select('date, total_amount')
-          .eq('company_id', user?.company_id),
+          .from("sales_orders")
+          .select("date, total_amount")
+          .eq("company_id", user?.company_id),
         // .gte('date', from)
         // .lte('date', to), // ✅ Chart
 
         supabase
-          .from('sales_orders')
-          .select('total_amount, delivery_fee')
-          .eq('company_id', user?.company_id),
+          .from("sales_orders")
+          .select("total_amount, delivery_fee")
+          .eq("company_id", user?.company_id),
         // .gte('date', from)
         // .lte('date', to), // ✅ Sales total
 
         supabase
-          .from('purchase_orders')
-          .select('total_amount')
-          .eq('company_id', user?.company_id)
-          .neq('id', 29) // Used for exist inventory
-          .neq('status', 'draft'),
+          .from("purchase_orders")
+          .select("total_amount")
+          .eq("company_id", user?.company_id)
+          .neq("id", 29) // Used for exist inventory
+          .neq("status", "draft"),
         // .gte('date', from)
         // .lte('date', to), // ✅ Purchases
 
         supabase
-          .from('products')
-          .select('name, current_quantity, category:category_id(name)')
-          .eq('company_id', user?.company_id)
-          .lt('current_quantity', 10),
+          .from("products")
+          .select("name, current_quantity, category:category_id(name)")
+          .eq("company_id", user?.company_id)
+          .lt("current_quantity", 10),
 
         supabase
-          .from('sales_orders')
-          .select('customer_id, total_amount, customer:customer_id(name)')
-          .eq('company_id', user?.company_id),
+          .from("sales_orders")
+          .select("customer_id, total_amount, customer:customer_id(name)")
+          .eq("company_id", user?.company_id),
         // .gte('date', from)
         // .lte('date', to), // ✅ Top customers
 
         supabase
-          .from('sales_order_items')
+          .from("sales_order_items")
           .select(
-            '*, product_stock:product_stock_id(id, product_id, product:product_id(name))'
+            "*, product_stock:product_stock_id(id, product_id, product:product_id(name))"
           )
-          .eq('company_id', user?.company_id)
-      ])
+          .eq("company_id", user?.company_id),
+      ]);
 
       // Sales charts
-      const grouped: Record<string, number> = {}
+      const grouped: Record<string, number> = {};
 
       if (salesChartResponse.data) {
         for (const row of salesChartResponse.data ?? []) {
-          const createdAt = parseISO(row.date)
+          const createdAt = parseISO(row.date);
           const weekStart = format(
             startOfWeek(createdAt, { weekStartsOn: 1 }),
-            'yyyy-MM-dd'
-          )
+            "yyyy-MM-dd"
+          );
           grouped[weekStart] =
-            (grouped[weekStart] || 0) + (row.total_amount ?? 0)
+            (grouped[weekStart] || 0) + (row.total_amount ?? 0);
         }
 
         // Convert to array sorted by week
@@ -168,42 +168,42 @@ export default function AdminDashboard() {
           .map(([week, total]) => ({ week, total }))
           .sort(
             (a, b) => new Date(a.week).getTime() - new Date(b.week).getTime()
-          )
+          );
 
-        setSalesData(weeklyData)
+        setSalesData(weeklyData);
       }
 
       const totalCostValue =
         productStocks.data?.reduce((sum, item) => {
-          const remaning_qty = item.remaining_quantity ?? 0
+          const remaning_qty = item.remaining_quantity ?? 0;
           // const missing = item.missing ?? 0
-          const missing = 0
-          const cost = item.cost ?? 0
+          const missing = 0;
+          const cost = item.cost ?? 0;
 
-          return sum + (remaning_qty + missing) * cost
-        }, 0) || 0
+          return sum + (remaning_qty + missing) * cost;
+        }, 0) || 0;
 
       const totalPriceValue =
         productStocks.data?.reduce((sum, item) => {
-          const remaning_qty = item.remaining_quantity ?? 0
-          const cost = item.selling_price ?? 0
+          const remaning_qty = item.remaining_quantity ?? 0;
+          const cost = item.selling_price ?? 0;
 
-          return sum + remaning_qty * cost
-        }, 0) || 0
+          return sum + remaning_qty * cost;
+        }, 0) || 0;
 
       const TodaySales =
-        todaySales.data?.reduce((sum, s) => sum + s.total_amount, 0) || 0
+        todaySales.data?.reduce((sum, s) => sum + s.total_amount, 0) || 0;
       const totalSales =
         salesRes.data?.reduce(
           (sum, s) => sum + (s.total_amount + s.delivery_fee),
           0
-        ) || 0
-      const totalSalesOrders = salesRes.data?.length || 0
+        ) || 0;
+      const totalSalesOrders = salesRes.data?.length || 0;
       const totalPurchases =
-        purchasesRes.data?.reduce((sum, p) => sum + p.total_amount, 0) || 0
-      const outstandingPayments = await getOutstandingPayments()
+        purchasesRes.data?.reduce((sum, p) => sum + p.total_amount, 0) || 0;
+      const outstandingPayments = await getOutstandingPayments();
       const lowStockProducts: LowStockProductType[] | [] | null =
-        lowStockRes.data
+        lowStockRes.data;
 
       // Top Customers
       // const cGrouped: Record<string, { name: string; total: number }> = {}
@@ -226,50 +226,50 @@ export default function AdminDashboard() {
       //   .slice(0, 5)
 
       // Group totals by customer
-      const cGrouped: Record<string, { name: string; total: number }> = {}
+      const cGrouped: Record<string, { name: string; total: number }> = {};
 
-      console.log('salesCustomerRes', salesCustomerRes)
+      console.log("salesCustomerRes", salesCustomerRes);
       for (const row of salesCustomerRes.data ?? []) {
-        const id = row.customer_id
-        const name = (row as any).customer?.name || 'Unknown'
-        const amount = row.total_amount ?? 0
+        const id = row.customer_id;
+        const name = (row as any).customer?.name || "Unknown";
+        const amount = row.total_amount ?? 0;
 
         if (!cGrouped[id]) {
-          cGrouped[id] = { name, total: 0 }
+          cGrouped[id] = { name, total: 0 };
         }
 
-        cGrouped[id].total += amount
+        cGrouped[id].total += amount;
       }
 
       // Convert to array and sort by total (descending)
       const topCustomers = Object.values(cGrouped)
         .sort((a, b) => b.total - a.total)
-        .slice(0, 10) // limit to top 10 customers
+        .slice(0, 10); // limit to top 10 customers
 
-      setTopSellingCustomers(topCustomers)
+      setTopSellingCustomers(topCustomers);
 
       // Best Sellers
       const productSalesMap: Record<
         string,
         { name: string; quantity: number }
-      > = {}
+      > = {};
 
-      const bestSellers: SalesOrderItem[] | null = bestSellersRes.data
+      const bestSellers: SalesOrderItem[] | null = bestSellersRes.data;
       bestSellers?.forEach((item) => {
-        const productStock = item.product_stock
-        const productId = productStock?.product_id
-        const productName = productStock?.product?.name
+        const productStock = item.product_stock;
+        const productId = productStock?.product_id;
+        const productName = productStock?.product?.name;
         if (productId && productName) {
           if (!productSalesMap[productId]) {
-            productSalesMap[productId] = { name: productName, quantity: 0 }
+            productSalesMap[productId] = { name: productName, quantity: 0 };
           }
-          productSalesMap[productId].quantity += item.quantity
+          productSalesMap[productId].quantity += item.quantity;
         }
-      })
+      });
 
       const bestSellingProducts = Object.values(productSalesMap)
         .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 10)
+        .slice(0, 10);
 
       setMetrics({
         totalPriceValue,
@@ -280,36 +280,36 @@ export default function AdminDashboard() {
         totalPurchases,
         outstandingPayments,
         lowStockProducts,
-        bestSellingProducts
-      })
-    }
+        bestSellingProducts,
+      });
+    };
 
     const getOutstandingPayments = async (): Promise<number> => {
       const { data, error } = await supabase
-        .from('sales_orders')
-        .select('total_amount')
-        .eq('company_id', user?.company_id)
-        .neq('payment_status', 'Deposited')
+        .from("sales_orders")
+        .select("total_amount")
+        .eq("company_id", user?.company_id)
+        .neq("payment_status", "Deposited");
 
       if (error) {
-        console.error('Error fetching outstanding payments:', error.message)
-        return 0
+        console.error("Error fetching outstanding payments:", error.message);
+        return 0;
       }
 
       // Sum all total_amount values
       const total =
-        data?.reduce((acc, item) => acc + (item.total_amount || 0), 0) ?? 0
+        data?.reduce((acc, item) => acc + (item.total_amount || 0), 0) ?? 0;
 
-      return total
-    }
-    fetchMetrics()
-  }, [dateFrom, dateTo, user?.company_id])
+      return total;
+    };
+    fetchMetrics();
+  }, [dateFrom, dateTo, user?.company_id]);
 
   const displayedProducts = showAllLowStock
     ? metrics?.lowStockProducts
-    : metrics?.lowStockProducts?.slice(0, 5)
+    : metrics?.lowStockProducts?.slice(0, 5);
 
-  if (!metrics) return <LoadingSkeleton />
+  if (!metrics) return <LoadingSkeleton />;
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 p-4">
@@ -346,8 +346,8 @@ export default function AdminDashboard() {
             {(dateFrom !== todayStr || dateTo !== todayStr) && (
               <button
                 onClick={() => {
-                  setDateFrom(todayStr)
-                  setDateTo(todayStr)
+                  setDateFrom(todayStr);
+                  setDateTo(todayStr);
                 }}
                 className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium"
               >
@@ -366,10 +366,10 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-extrabold tracking-tight">
-                  <Php />{' '}
+                  <Php />{" "}
                   {metrics.TodaySales.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
+                    maximumFractionDigits: 2,
                   })}
                 </div>
               </CardContent>
@@ -383,10 +383,10 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-extrabold tracking-tight">
-                  <Php />{' '}
+                  <Php />{" "}
                   {metrics.totalSales.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
+                    maximumFractionDigits: 2,
                   })}
                 </div>
               </CardContent>
@@ -394,39 +394,41 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+      {user?.company_id !== "4" && (
+        <>
+          <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
+            <CardHeader>
+              <CardTitle>Total Cost of Inventory</CardTitle>
+              <CardDescription>Based on purchase cost</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <Php />{" "}
+                {metrics.totalCostValue.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
-      <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
-        <CardHeader>
-          <CardTitle>Total Cost of Inventory</CardTitle>
-          <CardDescription>Based on purchase cost</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            <Php />{' '}
-            {metrics.totalCostValue.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
-        <CardHeader>
-          <CardTitle>Total Value of Inventory</CardTitle>
-          <CardDescription>Based on current price</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            <Php />{' '}
-            {metrics.totalPriceValue.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
+          <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
+            <CardHeader>
+              <CardTitle>Total Value of Inventory</CardTitle>
+              <CardDescription>Based on current price</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <Php />{" "}
+                {metrics.totalPriceValue.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
       {/* <Card className="md:col-span-2 lg:col-span-1 bg-blue-100 dark:bg-black">
         <CardHeader>
           <CardTitle>Total Purchases</CardTitle>
@@ -449,12 +451,12 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            <Php />{' '}
+            <Php />{" "}
             {(metrics.totalSales - metrics.outstandingPayments).toLocaleString(
               undefined,
               {
                 minimumFractionDigits: 2,
-                maximumFractionDigits: 2
+                maximumFractionDigits: 2,
               }
             )}
           </div>
@@ -470,10 +472,10 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            <Php />{' '}
+            <Php />{" "}
             {metrics.outstandingPayments.toLocaleString(undefined, {
               minimumFractionDigits: 2,
-              maximumFractionDigits: 2
+              maximumFractionDigits: 2,
             })}
           </div>
         </CardContent>
@@ -502,7 +504,7 @@ export default function AdminDashboard() {
                   <div className="space-y-1">
                     <p className="text-sm font-medium leading-none">{p.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {p.category?.name ?? 'Uncategorized'}
+                      {p.category?.name ?? "Uncategorized"}
                     </p>
                   </div>
                   <div>
@@ -574,13 +576,13 @@ export default function AdminDashboard() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="week"
-                tickFormatter={(val) => format(new Date(val), 'MMM d')}
+                tickFormatter={(val) => format(new Date(val), "MMM d")}
               />
               <YAxis />
               <Tooltip
                 formatter={(value) =>
                   `₱ ${Number(value).toLocaleString(undefined, {
-                    minimumFractionDigits: 2
+                    minimumFractionDigits: 2,
                   })}`
                 }
               />
@@ -609,9 +611,9 @@ export default function AdminDashboard() {
               >
                 <span>{c.name}</span>
                 <span className="font-semibold">
-                  ₱{' '}
+                  ₱{" "}
                   {c.total.toLocaleString(undefined, {
-                    minimumFractionDigits: 2
+                    minimumFractionDigits: 2,
                   })}
                 </span>
               </li>
@@ -625,5 +627,5 @@ export default function AdminDashboard() {
         onClose={() => setIsViewOutstandingOpen(false)}
       />
     </div>
-  )
+  );
 }

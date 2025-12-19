@@ -41,8 +41,10 @@ const FormSchema = z.object({
   date: z.string().min(1, "Date is required"),
   po_number: z.string().optional(),
   so_number: z.string().min(1, "SO Number is required"),
-  quantity_cu_m: z.coerce.number().min(10, "Minimum order is 10 cubic meters"),
-  consumables: z.coerce.number().min(0, "Consumables must be 0 or greater"),
+  quantity_cu_m: z.coerce.number().min(0, "Quantity must be 0 or greater"),
+  price_per_cu_m: z.coerce
+    .number()
+    .min(0, "Price per cu.m. must be 0 or greater"),
   products: z
     .array(
       z.object({
@@ -83,8 +85,8 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
       po_number: "",
       so_number: "",
       customer_id: 0,
-      quantity_cu_m: 10,
-      consumables: 0,
+      quantity_cu_m: 0,
+      price_per_cu_m: 0,
       products: [
         {
           product_stock_id: 0,
@@ -100,8 +102,8 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
     name: "products",
   });
 
-  const consumables = useWatch({ control, name: "consumables" });
-  const products = useWatch({ control, name: "products" });
+  const pricePerCuM = useWatch({ control, name: "price_per_cu_m" });
+  const quantityCuM = useWatch({ control, name: "quantity_cu_m" });
 
   // Fetch customers and product stocks
   useEffect(() => {
@@ -148,8 +150,8 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
       po_number: "",
       so_number: "",
       customer_id: 0,
-      quantity_cu_m: 10,
-      consumables: 0,
+      quantity_cu_m: 0,
+      price_per_cu_m: 0,
       products: [
         {
           product_stock_id: 0,
@@ -161,25 +163,9 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
 
   // Calculate total cost
   const totalCost = useMemo(() => {
-    let total = 0;
-
-    // Calculate cost for each selected product
-    products.forEach((product) => {
-      if (product.product_stock_id && product.quantity > 0) {
-        const productStock = productsList?.find(
-          (p) => p.id === product.product_stock_id
-        );
-        if (productStock) {
-          total += productStock.selling_price * product.quantity;
-        }
-      }
-    });
-
-    // Add consumables
-    total += Number(consumables) || 0;
-
-    return total;
-  }, [products, productsList, consumables]);
+    // Calculate cost based on price per cu.m. multiplied by quantity only
+    return (Number(pricePerCuM) || 0) * (Number(quantityCuM) || 0);
+  }, [pricePerCuM, quantityCuM]);
 
   const onSubmit = async (formdata: FormType) => {
     if (isSubmitting) return;
@@ -225,6 +211,8 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
         so_number: formdata.so_number,
         po_number: formdata.po_number ?? "",
         total_amount: totalCost,
+        quantity_cu_m: formdata.quantity_cu_m,
+        price_per_cu_m: formdata.price_per_cu_m,
         delivery_fee: 0,
         status: "reserved",
         payment_status: "unpaid",
@@ -260,9 +248,9 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
           product_stock_id: product.product_stock_id,
           product_id: productStock.product_id,
           quantity: product.quantity,
-          unit_price: productStock.selling_price,
           discount: 0,
-          total: product.quantity * productStock.selling_price,
+          unit_price: 0,
+          total: 0,
           company_id: user?.company_id,
         };
       });
@@ -283,22 +271,11 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
           product_stock: productStock,
           product_id: productStock.product_id,
           quantity: product.quantity,
-          unit_price: productStock.selling_price,
+          unit_price: 0,
           discount: 0,
-          total: product.quantity * productStock.selling_price,
+          total: 0,
         };
       });
-
-      // Add consumables as other_charges if > 0
-      if (formdata.consumables > 0) {
-        await supabase
-          .from("sales_orders")
-          .update({
-            other_charges: "Consumables",
-            other_charges_amount: formdata.consumables,
-          })
-          .eq("id", newPOId);
-      }
 
       const { error: insertItemsError } = await supabase
         .from("sales_order_items")
@@ -512,31 +489,24 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
                           <Input
                             type="number"
                             step="any"
-                            min="10"
+                            min="0"
                             className="app__input_standard"
-                            placeholder="10"
+                            placeholder="0.00"
                             {...field}
-                            onChange={(e) => {
-                              const value = parseFloat(e.target.value) || 0;
-                              field.onChange(Math.max(10, value));
-                            }}
                           />
                         </FormControl>
                         <FormMessage />
-                        <p className="text-xs text-muted-foreground">
-                          Minimum: 10 cu.m
-                        </p>
                       </FormItem>
                     )}
                   />
 
                   <FormField
                     control={form.control}
-                    name="consumables"
+                    name="price_per_cu_m"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="app__formlabel_standard">
-                          Consumables Cost
+                          Price with cu.m.
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -783,10 +753,14 @@ export const AddModal = ({ isOpen, onClose }: ModalProps) => {
                   <div className="mt-4 pt-4 border-t border-border/60 space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">
-                        Consumables:
+                        Price per cu.m. × Quantity:
                       </span>
                       <span className="font-semibold">
-                        ₱{(Number(consumables) || 0).toFixed(2)}
+                        ₱
+                        {(
+                          (Number(pricePerCuM) || 0) *
+                          (Number(quantityCuM) || 0)
+                        ).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">

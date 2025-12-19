@@ -33,6 +33,8 @@ import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import { AddPaymentModal } from "../sales-orders/AddPaymentModal";
 import { ViewProductsModal } from "../sales-orders/ViewProductsModal";
+import ClaimSlipModal from "./ClaimSlipModal";
+import WithrawalSlipModal from "./WithrawalSlipModal";
 
 type ItemType = SalesOrder;
 const table = "sales_orders";
@@ -51,6 +53,8 @@ export const List = ({}) => {
   const [modalCustomerOpen, setModalCustomerOpen] = useState(false);
   const [modalConfirmChangeStatus, setModalConfirmChangeStatus] =
     useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isPrintWSModalOpen, setIsPrintWSModalOpen] = useState(false);
 
   const [selectedItem, setSelectedItem] = useState<ItemType | null>(null);
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -234,6 +238,15 @@ export const List = ({}) => {
     setModalViewProductsOpen(true);
   };
 
+  const openClaimSlip = async (item: ItemType) => {
+    setSelectedItem(item);
+    setIsPrintModalOpen(true);
+  };
+  const openWithrawalSlip = async (item: ItemType) => {
+    setSelectedItem(item);
+    setIsPrintWSModalOpen(true);
+  };
+
   const handleDelete = async () => {
     if (selectedItem) {
       const { error } = await supabase
@@ -320,6 +333,25 @@ export const List = ({}) => {
                     : "Invalid date"}
                 </div>
                 <div className="mt-2 space-x-2">
+                  {(item.status === "approved" ||
+                    item.status === "completed") && (
+                    <>
+                      <span
+                        className="text-xs text-blue-800 cursor-pointer font-bold"
+                        onClick={() => openClaimSlip(item)}
+                      >
+                        Order Slip
+                      </span>
+                      <span>|</span>
+                      <span
+                        className="text-xs text-blue-800 cursor-pointer font-bold"
+                        onClick={() => openWithrawalSlip(item)}
+                      >
+                        Withdrawal Slip
+                      </span>
+                      <span>|</span>
+                    </>
+                  )}
                   <span
                     className="text-xs text-blue-800 cursor-pointer font-bold"
                     onClick={() => handleViewProducts(item)}
@@ -571,6 +603,20 @@ export const List = ({}) => {
           customerId={selectedItem.customer_id ?? 0}
           name={selectedItem.customer?.name ?? ""}
           onClose={() => setModalCustomerOpen(false)}
+        />
+      )}
+      {selectedItem && (
+        <ClaimSlipModal
+          isOpen={isPrintModalOpen}
+          onClose={() => setIsPrintModalOpen(false)}
+          editData={selectedItem}
+        />
+      )}
+      {selectedItem && (
+        <WithrawalSlipModal
+          isOpen={isPrintWSModalOpen}
+          onClose={() => setIsPrintWSModalOpen(false)}
+          editData={selectedItem}
         />
       )}
     </div>
