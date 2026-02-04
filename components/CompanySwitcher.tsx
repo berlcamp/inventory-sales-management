@@ -16,9 +16,9 @@ export default function CompanySwitcher() {
     setCompanyId(id);
     localStorage.setItem("company_id", id);
 
-    // Give the overlay a moment to render before reload
+    // Give the overlay a moment to render before redirect
     setTimeout(() => {
-      window.location.reload();
+      window.location.href = "/";
     }, 200);
   };
 
